@@ -1,0 +1,30 @@
+# Dependencies
+node_modules/
+
+# Environment variables
+.env
+
+# SQLite database (re-created on startup)
+database.db
+
+# Uploaded files (user-generated content)
+public/uploads/profiles/*
+public/uploads/notes/*
+public/uploads/presentations/*
+public/uploads/documents/*
+
+# Keep the uploads directories via .gitkeep
+!public/uploads/profiles/.gitkeep
+!public/uploads/notes/.gitkeep
+!public/uploads/presentations/.gitkeep
+!public/uploads/documents/.gitkeep
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo

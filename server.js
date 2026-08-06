@@ -12,6 +12,11 @@ const { dbQuery } = require('./db');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Trust Render's reverse proxy so req.protocol reports 'https' correctly
+if (process.env.NODE_ENV === 'production') {
+  app.set('trust proxy', 1);
+}
+
 // Ensure uploads directories exist
 const uploadsDir = path.join(__dirname, 'public', 'uploads');
 const profilesDir = path.join(uploadsDir, 'profiles');
@@ -30,7 +35,9 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
   cookie: {
-    maxAge: 1000 * 60 * 60 * 24 // 24 hours
+    maxAge: 1000 * 60 * 60 * 24, // 24 hours
+    secure: process.env.NODE_ENV === 'production', // HTTPS-only in production
+    sameSite: process.env.NODE_ENV === 'production' ? 'lax' : false
   }
 }));
 
@@ -780,6 +787,6 @@ app.delete('/api/admin/notes/:id', requireAdmin, async (req, res) => {
 });
 
 // Start Express Server
-app.listen(PORT, () => {
-  console.log(`Server is running at http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server is running on port ${PORT}`);
 });
