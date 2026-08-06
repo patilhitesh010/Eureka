@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Eureka Startup Competition Management System. Join the next generation of innovators.">
+  <title>Eureka | Startup Competition</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="world-map-bg"></div>
+  <header>
+    <div class="container navbar">
+      <a href="index.html" class="logo">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 62" width="220" height="62" class="eureka-logo-svg">
+          <text x="50" y="10" font-family="'Orbitron', sans-serif" font-weight="700" font-size="6.5" fill="#a855f7" letter-spacing="0.5">E-CELL SIT'S</text>
+          <rect x="5" y="26" width="5" height="15" fill="#a855f7" />
+          <rect x="13" y="18" width="5" height="23" fill="#a855f7" />
+          <rect x="21" y="10" width="5" height="31" fill="#a855f7" />
+          <rect x="26" y="10" width="13" height="5" fill="#ffffff" />
+          <rect x="26" y="23" width="9" height="5" fill="#ffffff" />
+          <rect x="26" y="36" width="13" height="5" fill="#ffffff" />
+          <text x="43" y="41" font-family="'Orbitron', sans-serif" font-weight="900" font-size="34" fill="#ffffff" letter-spacing="1">UREKA</text>
+          <rect x="200" y="10" width="5" height="21" fill="#ffffff" />
+          <polygon points="200,35 205,35 204,41 199,41" fill="#ffffff" />
+          <polygon points="21,46 165,46 161,54 21,54" fill="#ffffff" />
+          <text x="27" y="52.5" font-family="'Outfit', sans-serif" font-weight="800" font-size="6" fill="#000000" letter-spacing="0.2">WHERE VISION MEETS VENTURE</text>
+          <text x="168" y="54" font-family="'Orbitron', sans-serif" font-weight="900" font-size="11" fill="#a855f7">2026</text>
+        </svg>
+      </a>
+      <nav>
+        <ul class="nav-links" id="nav-links">
+          <li><a href="index.html" class="active">Home</a></li>
+          <!-- Dynamic links injected here -->
+          <li id="auth-links">
+            <a href="login.html" class="btn btn-secondary btn-sm" style="display:inline-block; margin-right: 10px;">Login</a>
+            <a href="register.html" class="btn btn-primary btn-sm" style="display:inline-block;">Register</a>
+          </li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="hero">
+      <h1>Ignite Your <span>Startup Journey</span></h1>
+      <hr class="neon-line">
+      <p>Eureka is the ultimate launchpad for student entrepreneurs. Register your team, select your challenge, pitch your ideas.</p>
+      <hr class="neon-line">
+      <div style="display: flex; gap: 15px; justify-content: center;">
+        <a href="register.html" class="btn btn-primary" id="hero-cta">Register Now</a>
+        <a href="#about" class="btn btn-secondary">Learn More</a>
+      </div>
+    </section>
+
+    <section id="about" style="padding: 60px 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px;">
+      <div class="card">
+        <h3 style="color: var(--primary); margin-bottom: 15px; font-size: 20px;">💡 Predefined Challenge Tracks</h3>
+        <p style="color: var(--text-muted); font-size: 15px;">Choose from curated, high-impact problem domains including HealthTech, Green Energy Trading, Gamified EdTech, and Smart Logistics to address critical real-world issues.</p>
+      </div>
+      <div class="card">
+        <h3 style="color: var(--secondary); margin-bottom: 15px; font-size: 20px;">🛠 Custom Innovation</h3>
+        <p style="color: var(--text-muted); font-size: 15px;">Have your own disruptive startup concept? Select the custom track and write your own problem statement to showcase your unique business blueprint.</p>
+      </div>
+      <div class="card">
+        <h3 style="color: var(--accent); margin-bottom: 15px; font-size: 20px;">🛡 Real-Time Evaluation</h3>
+        <p style="color: var(--text-muted); font-size: 15px;">Keep track of your team validation progress directly from your dashboard. Receive personalized admin feedback, instructions, and files from competition organizers.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer style="margin-top: 80px; padding: 30px 0; text-align: center; border-top: 1px solid var(--panel-border); font-size: 14px; color: var(--text-muted);">
+    <div class="container">
+      <p>&copy; 2026 Eureka Startup Competition. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script src="js/transitions.js"></script>
+  <script>
+    // Session state check on load to adjust Navbar
+    fetch('/api/auth/me')
+      .then(res => {
+        if (res.ok) return res.json();
+        throw new Error();
+      })
+      .then(data => {
+        const authLinks = document.getElementById('auth-links');
+        const heroCta = document.getElementById('hero-cta');
+        const user = data.user;
+        
+        let dashboardUrl = user.role === 'admin' ? 'admin.html' : 'dashboard.html';
+        
+        // Update nav links
+        authLinks.innerHTML = `
+          <li><a href="${dashboardUrl}">Dashboard</a></li>
+          <li><button onclick="logout()" class="btn btn-secondary btn-sm" style="background: none; border: 1px solid var(--panel-border-glow); padding: 6px 14px; cursor: pointer; color: var(--text-main);">Logout</button></li>
+        `;
+        
+        // Update CTA
+        if (heroCta) {
+          heroCta.innerText = 'Go to Dashboard';
+          heroCta.href = dashboardUrl;
+        }
+      })
+      .catch(() => {
+        // Session not authenticated, keep default login/register links
+      });
+
+    function logout() {
+      fetch('/api/auth/logout', { method: 'POST' })
+        .then(() => window.navigateTo('index.html'));
+    }
+  </script>
+</body>
+</html>

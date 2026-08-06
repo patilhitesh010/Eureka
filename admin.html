@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel | Eureka</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="world-map-bg"></div>
+  <header>
+    <div class="container navbar">
+      <a href="index.html" class="logo">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 62" width="220" height="62" class="eureka-logo-svg">
+          <text x="50" y="10" font-family="'Orbitron', sans-serif" font-weight="700" font-size="6.5" fill="#a855f7" letter-spacing="0.5">E-CELL SIT'S</text>
+          <rect x="5" y="26" width="5" height="15" fill="#a855f7" />
+          <rect x="13" y="18" width="5" height="23" fill="#a855f7" />
+          <rect x="21" y="10" width="5" height="31" fill="#a855f7" />
+          <rect x="26" y="10" width="13" height="5" fill="#ffffff" />
+          <rect x="26" y="23" width="9" height="5" fill="#ffffff" />
+          <rect x="26" y="36" width="13" height="5" fill="#ffffff" />
+          <text x="43" y="41" font-family="'Orbitron', sans-serif" font-weight="900" font-size="34" fill="#ffffff" letter-spacing="1">UREKA</text>
+          <rect x="200" y="10" width="5" height="21" fill="#ffffff" />
+          <polygon points="200,35 205,35 204,41 199,41" fill="#ffffff" />
+          <polygon points="21,46 165,46 161,54 21,54" fill="#ffffff" />
+          <text x="27" y="52.5" font-family="'Outfit', sans-serif" font-weight="800" font-size="6" fill="#000000" letter-spacing="0.2">WHERE VISION MEETS VENTURE</text>
+          <text x="168" y="54" font-family="'Orbitron', sans-serif" font-weight="900" font-size="11" fill="#a855f7">2026</text>
+        </svg>
+        <span style="font-size: 14px; font-weight: 500; letter-spacing: 0.5px; color: var(--primary); text-transform: uppercase; margin-left: 10px;">Admin Portal</span>
+      </a>
+      <nav>
+        <ul class="nav-links">
+          <li><a href="index.html">Home</a></li>
+          <li><button id="logout-btn" class="btn btn-secondary btn-sm" style="background: none; border: 1px solid var(--panel-border-glow); cursor: pointer;">Logout</button></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container" style="padding: 40px 20px;">
+    <!-- Admin Alert Box -->
+    <div id="admin-alert"></div>
+
+    <!-- Stats Summary Grid -->
+    <div class="stats-grid">
+      <div class="card stat-card">
+        <div class="stat-label">Total Students</div>
+        <div class="stat-number" id="stat-students">0</div>
+      </div>
+      <div class="card stat-card">
+        <div class="stat-label">Total Teams</div>
+        <div class="stat-number" id="stat-teams">0</div>
+      </div>
+      <div class="card stat-card">
+        <div class="stat-label">Pending Reviews</div>
+        <div class="stat-number" id="stat-pending" style="color: var(--warning); text-shadow: 0 0 10px rgba(245, 158, 11, 0.4);">0</div>
+      </div>
+      <div class="card stat-card">
+        <div class="stat-label">Approved Projects</div>
+        <div class="stat-number" id="stat-approved" style="color: var(--success); text-shadow: 0 0 10px rgba(16, 185, 129, 0.4);">0</div>
+      </div>
+    </div>
+
+    <!-- Teams Management Panel -->
+    <section class="card" style="margin-bottom: 40px;">
+      <h3 style="margin-bottom: 20px; font-weight: 700; border-bottom: 1px solid var(--panel-border); padding-bottom: 10px;">📋 Registered Startups & Teams</h3>
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>Team ID</th>
+              <th>Team Name</th>
+              <th>Problem Statement</th>
+              <th>Leader Info</th>
+              <th>Members</th>
+              <th>Files</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="teams-table-body">
+            <tr>
+              <td colspan="7" style="text-align: center; color: var(--text-muted);">Loading team registration records...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Students Management Panel -->
+    <section class="card">
+      <h3 style="margin-bottom: 20px; font-weight: 700; border-bottom: 1px solid var(--panel-border); padding-bottom: 10px;">👥 Registered Students</h3>
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Profile</th>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Registered Date</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="students-table-body">
+            <tr>
+              <td colspan="6" style="text-align: center; color: var(--text-muted);">Loading student profile directories...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <!-- Edit Student Modal -->
+  <div id="edit-student-modal" class="modal">
+    <div class="card modal-content">
+      <div class="modal-header">
+        <h3 style="color: var(--primary);">Edit Student Details</h3>
+        <button class="close-modal" onclick="closeModal('edit-student-modal')">&times;</button>
+      </div>
+      <form id="edit-student-form">
+        <input type="hidden" id="edit-student-id">
+        <div class="form-group">
+          <label for="edit-student-name">Full Name</label>
+          <input type="text" id="edit-student-name" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label for="edit-student-email">Email Address</label>
+          <input type="email" id="edit-student-email" class="form-control" required>
+        </div>
+        <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('edit-student-modal')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Edit Team Modal -->
+  <div id="edit-team-modal" class="modal">
+    <div class="card modal-content">
+      <div class="modal-header">
+        <h3 style="color: var(--primary);">Edit Team Registration</h3>
+        <button class="close-modal" onclick="closeModal('edit-team-modal')">&times;</button>
+      </div>
+      <form id="edit-team-form">
+        <input type="hidden" id="edit-team-id">
+        <div class="form-group">
+          <label for="edit-team-name">Team Name</label>
+          <input type="text" id="edit-team-name" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label for="edit-team-type">Problem Statement Type</label>
+          <select id="edit-team-type" class="form-control" required>
+            <option value="predefined">Predefined Statement</option>
+            <option value="custom">Custom Innovation</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="edit-team-statement">Problem Statement</label>
+          <textarea id="edit-team-statement" class="form-control" rows="4" required></textarea>
+        </div>
+        <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('edit-team-modal')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Add Notice Modal -->
+  <div id="add-notice-modal" class="modal">
+    <div class="card modal-content">
+      <div class="modal-header">
+        <h3 style="color: var(--primary);">Post Notice to Dashboard</h3>
+        <button class="close-modal" onclick="closeModal('add-notice-modal')">&times;</button>
+      </div>
+      <form id="add-notice-form" enctype="multipart/form-data">
+        <input type="hidden" id="notice-student-id">
+        <div class="form-group">
+          <label for="notice-student-name">Student Recipient</label>
+          <input type="text" id="notice-student-name" class="form-control" readonly>
+        </div>
+        <div class="form-group">
+          <label for="notice-text">Message / Note Content</label>
+          <textarea id="notice-text" name="note_text" class="form-control" rows="4" placeholder="Write notice details here..." required></textarea>
+        </div>
+        <div class="form-group">
+          <label for="notice-image">Attach Image (Optional)</label>
+          <input type="file" id="notice-image" name="note_image" class="form-control" accept="image/*">
+        </div>
+        <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('add-notice-modal')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Post Notice</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <footer style="margin-top: 80px; padding: 30px 0; text-align: center; border-top: 1px solid var(--panel-border); font-size: 14px; color: var(--text-muted);">
+    <div class="container">
+      <p>&copy; 2026 Eureka Startup Competition. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script src="js/transitions.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>

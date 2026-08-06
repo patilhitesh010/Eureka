@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Dashboard | Eureka</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="world-map-bg"></div>
+  <header>
+    <div class="container navbar">
+      <a href="index.html" class="logo">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 62" width="220" height="62" class="eureka-logo-svg">
+          <text x="50" y="10" font-family="'Orbitron', sans-serif" font-weight="700" font-size="6.5" fill="#a855f7" letter-spacing="0.5">E-CELL SIT'S</text>
+          <rect x="5" y="26" width="5" height="15" fill="#a855f7" />
+          <rect x="13" y="18" width="5" height="23" fill="#a855f7" />
+          <rect x="21" y="10" width="5" height="31" fill="#a855f7" />
+          <rect x="26" y="10" width="13" height="5" fill="#ffffff" />
+          <rect x="26" y="23" width="9" height="5" fill="#ffffff" />
+          <rect x="26" y="36" width="13" height="5" fill="#ffffff" />
+          <text x="43" y="41" font-family="'Orbitron', sans-serif" font-weight="900" font-size="34" fill="#ffffff" letter-spacing="1">UREKA</text>
+          <rect x="200" y="10" width="5" height="21" fill="#ffffff" />
+          <polygon points="200,35 205,35 204,41 199,41" fill="#ffffff" />
+          <polygon points="21,46 165,46 161,54 21,54" fill="#ffffff" />
+          <text x="27" y="52.5" font-family="'Outfit', sans-serif" font-weight="800" font-size="6" fill="#000000" letter-spacing="0.2">WHERE VISION MEETS VENTURE</text>
+          <text x="168" y="54" font-family="'Orbitron', sans-serif" font-weight="900" font-size="11" fill="#a855f7">2026</text>
+        </svg>
+      </a>
+      <nav>
+        <ul class="nav-links">
+          <li><span id="user-display-name" style="color: var(--text-highlight); font-weight: 600;">Student</span></li>
+          <li id="admin-nav-item" style="display: none;"><a href="admin.html" class="btn btn-primary btn-sm" style="text-decoration: none;">Admin Panel</a></li>
+          <li><a href="index.html">Home</a></li>
+          <li><button id="logout-btn" class="btn btn-secondary btn-sm" style="background: none; border: 1px solid var(--panel-border-glow); cursor: pointer;">Logout</button></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- Admin Quick Access Card -->
+    <div id="admin-action-card" class="card" style="display: none; border: 1px solid var(--primary); background: rgba(168, 85, 247, 0.05); margin-bottom: 25px; box-shadow: var(--neon-shadow);">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+        <div>
+          <h3 style="color: var(--primary); margin-bottom: 5px; display: flex; align-items: center; gap: 8px;">🛡️ Administrator Access</h3>
+          <p style="color: var(--text-muted); font-size: 14px; margin: 0;">You are logged in as an administrator. You can manage teams, approve submissions, edit students, and post announcements.</p>
+        </div>
+        <a href="admin.html" class="btn btn-primary btn-sm" style="text-decoration: none; padding: 10px 20px;">Go to Admin Panel</a>
+      </div>
+    </div>
+
+    <div class="dashboard-grid">
+      <!-- Left Column: Team and Profile -->
+      <div class="dashboard-section">
+        <!-- Alert Box -->
+        <div id="dashboard-alert"></div>
+
+        <!-- Team Status or Registration Card -->
+        <div id="team-card" class="card">
+          <div style="text-align: center; padding: 40px 0;">
+            <p style="color: var(--text-muted);">Loading team registration status...</p>
+          </div>
+        </div>
+
+        <!-- Profile Management Card -->
+        <div class="card">
+          <h3 style="margin-bottom: 20px; font-weight: 700; border-bottom: 1px solid var(--panel-border); padding-bottom: 10px;">👤 Profile Management</h3>
+          <form id="profile-form" enctype="multipart/form-data">
+            <div class="profile-header">
+              <div class="profile-avatar-container">
+                <img id="profile-avatar-preview" src="uploads/profiles/default.png" alt="Avatar" class="profile-avatar" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 80 80\'><rect width=\'80\' height=\'80\' fill=\'%230e021a\'/><circle cx=\'40\' cy=\'30\' r=\'16\' fill=\'%23a855f7\'/><path d=\'M16 68 C16 54, 64 54, 64 68\' fill=\'%23a855f7\'/></svg>'">
+                <label for="profile_pic" class="avatar-upload-btn">Upload</label>
+                <input type="file" id="profile_pic" name="profile_pic" accept="image/*" style="display: none;">
+              </div>
+              <div>
+                <h4 id="profile-name-title" style="margin-bottom: 5px;">Your Name</h4>
+                <p id="profile-role-title" style="font-size: 13px; color: var(--primary); text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px;">Student Leader</p>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="profile-name">Full Name</label>
+              <input type="text" id="profile-name" name="name" class="form-control" required>
+            </div>
+            <div class="form-group">
+              <label for="profile-email">Email Address</label>
+              <input type="email" id="profile-email" name="email" class="form-control" required>
+            </div>
+            <div class="form-group">
+              <label for="profile-password">Update Password (Leave blank to keep current)</label>
+              <input type="password" id="profile-password" name="password" class="form-control" placeholder="New Password">
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="margin-top: 10px;">Update Profile</button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Right Column: Admin Notes & Notices -->
+      <div class="dashboard-section">
+        <div class="card">
+          <h3 style="margin-bottom: 20px; font-weight: 700; border-bottom: 1px solid var(--panel-border); padding-bottom: 10px;">📢 Notices & Organizer Notes</h3>
+          <div class="notes-container" id="notes-container">
+            <p style="color: var(--text-muted); text-align: center; padding: 20px 0;">No notices posted yet.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer style="margin-top: 80px; padding: 30px 0; text-align: center; border-top: 1px solid var(--panel-border); font-size: 14px; color: var(--text-muted);">
+    <div class="container">
+      <p>&copy; 2026 Eureka Startup Competition. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script src="js/transitions.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/dashboard.js"></script>
+</body>
+</html>

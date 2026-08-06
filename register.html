@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register | Eureka</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="world-map-bg"></div>
+  <header>
+    <div class="container navbar">
+      <a href="index.html" class="logo">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 62" width="220" height="62" class="eureka-logo-svg">
+          <text x="50" y="10" font-family="'Orbitron', sans-serif" font-weight="700" font-size="6.5" fill="#a855f7" letter-spacing="0.5">E-CELL SIT'S</text>
+          <rect x="5" y="26" width="5" height="15" fill="#a855f7" />
+          <rect x="13" y="18" width="5" height="23" fill="#a855f7" />
+          <rect x="21" y="10" width="5" height="31" fill="#a855f7" />
+          <rect x="26" y="10" width="13" height="5" fill="#ffffff" />
+          <rect x="26" y="23" width="9" height="5" fill="#ffffff" />
+          <rect x="26" y="36" width="13" height="5" fill="#ffffff" />
+          <text x="43" y="41" font-family="'Orbitron', sans-serif" font-weight="900" font-size="34" fill="#ffffff" letter-spacing="1">UREKA</text>
+          <rect x="200" y="10" width="5" height="21" fill="#ffffff" />
+          <polygon points="200,35 205,35 204,41 199,41" fill="#ffffff" />
+          <polygon points="21,46 165,46 161,54 21,54" fill="#ffffff" />
+          <text x="27" y="52.5" font-family="'Outfit', sans-serif" font-weight="800" font-size="6" fill="#000000" letter-spacing="0.2">WHERE VISION MEETS VENTURE</text>
+          <text x="168" y="54" font-family="'Orbitron', sans-serif" font-weight="900" font-size="11" fill="#a855f7">2026</text>
+        </svg>
+      </a>
+      <nav>
+        <ul class="nav-links">
+          <li><a href="index.html">Home</a></li>
+          <li><a href="login.html">Login</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container auth-container">
+    <div class="card auth-card">
+      <h2>Create Student Account</h2>
+      <p class="subtitle">Join as a team leader to register your team and submit your ideas</p>
+
+      <div id="alert-box"></div>
+
+      <form id="register-form">
+        <div class="form-group">
+          <label for="name">Full Name</label>
+          <input type="text" id="name" class="form-control" placeholder="John Doe" required>
+        </div>
+        <div class="form-group">
+          <label for="email">Email Address</label>
+          <input type="email" id="email" class="form-control" placeholder="name@domain.com" required>
+        </div>
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" class="form-control" placeholder="Min. 6 characters" required>
+        </div>
+        <div class="form-group">
+          <label for="confirm-password">Confirm Password</label>
+          <input type="password" id="confirm-password" class="form-control" placeholder="Re-enter password" required>
+        </div>
+        
+        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">Create Account</button>
+      </form>
+
+      <p style="text-align: center; margin-top: 25px; font-size: 14px; color: var(--text-muted);">
+        Already have an account? <a href="login.html" style="color: var(--primary); text-decoration: none; font-weight: 600;">Log in here</a>
+      </p>
+    </div>
+  </main>
+
+  <script src="js/transitions.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    // Redirect if already logged in
+    fetch('/api/auth/me')
+      .then(res => {
+        if (res.ok) return res.json();
+      })
+      .then(data => {
+        if (data && data.user) {
+          window.navigateTo(data.user.role === 'admin' ? 'admin.html' : 'dashboard.html');
+        }
+      });
+  </script>
+</body>
+</html>
