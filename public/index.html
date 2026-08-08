@@ -4,34 +4,45 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Eureka Startup Competition Management System. Join the next generation of innovators.">
-  <title>Eureka | Startup Competition</title>
+  <title>Eureka 2026 | E-Cell SIT</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="world-map-bg"></div>
+  <!-- Slow Blinking Vector Monogram Background -->
+  <div class="eureka-bg-blink">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="500" height="500" style="fill: var(--primary); filter: drop-shadow(0 0 25px rgba(168,85,247,0.25));">
+      <polygon points="45,20 155,20 155,50 45,50" />
+      <polygon points="45,85 130,85 130,115 45,115" style="fill: var(--white);" />
+      <polygon points="45,150 155,150 155,180 45,180" />
+      <rect x="18" y="20" width="18" height="160" />
+    </svg>
+  </div>
+  
   <header>
     <div class="container navbar">
       <a href="index.html" class="logo">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 62" width="220" height="62" class="eureka-logo-svg">
-          <text x="50" y="10" font-family="'Orbitron', sans-serif" font-weight="700" font-size="6.5" fill="#a855f7" letter-spacing="0.5">E-CELL SIT'S</text>
+          <text x="50" y="10" font-family="'Space Grotesk', sans-serif" font-weight="700" font-size="6.5" fill="#a855f7" letter-spacing="0.5">E-CELL SIT'S</text>
           <rect x="5" y="26" width="5" height="15" fill="#a855f7" />
           <rect x="13" y="18" width="5" height="23" fill="#a855f7" />
           <rect x="21" y="10" width="5" height="31" fill="#a855f7" />
           <rect x="26" y="10" width="13" height="5" fill="#ffffff" />
           <rect x="26" y="23" width="9" height="5" fill="#ffffff" />
           <rect x="26" y="36" width="13" height="5" fill="#ffffff" />
-          <text x="43" y="41" font-family="'Orbitron', sans-serif" font-weight="900" font-size="34" fill="#ffffff" letter-spacing="1">UREKA</text>
+          <text x="43" y="41" font-family="'Space Grotesk', sans-serif" font-weight="900" font-size="34" fill="#ffffff" letter-spacing="1">UREKA</text>
           <rect x="200" y="10" width="5" height="21" fill="#ffffff" />
           <polygon points="200,35 205,35 204,41 199,41" fill="#ffffff" />
           <polygon points="21,46 165,46 161,54 21,54" fill="#ffffff" />
           <text x="27" y="52.5" font-family="'Outfit', sans-serif" font-weight="800" font-size="6" fill="#000000" letter-spacing="0.2">WHERE VISION MEETS VENTURE</text>
-          <text x="168" y="54" font-family="'Orbitron', sans-serif" font-weight="900" font-size="11" fill="#a855f7">2026</text>
+          <text x="168" y="54" font-family="'Space Grotesk', sans-serif" font-weight="900" font-size="11" fill="#a855f7">2026</text>
         </svg>
       </a>
       <nav>
         <ul class="nav-links" id="nav-links">
           <li><a href="index.html" class="active">Home</a></li>
-          <!-- Dynamic links injected here -->
+          <li><a href="#problems">40 Problems</a></li>
+          <li><a href="#timeline">Timeline</a></li>
+          <li><a href="#guidelines">Guidelines</a></li>
           <li id="auth-links">
             <a href="login.html" class="btn btn-secondary btn-sm" style="display:inline-block; margin-right: 10px;">Login</a>
             <a href="register.html" class="btn btn-primary btn-sm" style="display:inline-block;">Register</a>
@@ -42,43 +53,412 @@
   </header>
 
   <main class="container">
+    <!-- Hero Side-by-Side Split Section -->
     <section class="hero">
-      <h1>Ignite Your <span>Startup Journey</span></h1>
-      <hr class="neon-line">
-      <p>Eureka is the ultimate launchpad for student entrepreneurs. Register your team, select your challenge, pitch your ideas.</p>
-      <hr class="neon-line">
-      <div style="display: flex; gap: 15px; justify-content: center;">
-        <a href="register.html" class="btn btn-primary" id="hero-cta">Register Now</a>
-        <a href="#about" class="btn btn-secondary">Learn More</a>
+      <div class="hero-grid">
+        <div class="hero-text-block">
+          <div class="section-tag" style="display: flex; align-items: center; gap: 8px;">
+            <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--success); box-shadow: 0 0 10px var(--success);"></span>
+            REGISTRATIONS ARE OFFICIALLY OPEN
+          </div>
+          <h1>Ignite Your <span>Startup Journey</span></h1>
+          <p>Eureka 2026 is India's premier national business model and industrial problem-solving competition, organized by E-Cell SIT. Join forces with innovators and compete across 40 real-world tracks.</p>
+          
+          <!-- Countdown clock -->
+          <div class="countdown-clock">
+            <div class="countdown-segment">
+              <span class="countdown-val" id="cd-days">00</span>
+              <span class="countdown-lbl">Days</span>
+            </div>
+            <div class="countdown-divider">:</div>
+            <div class="countdown-segment">
+              <span class="countdown-val" id="cd-hours">00</span>
+              <span class="countdown-lbl">Hrs</span>
+            </div>
+            <div class="countdown-divider">:</div>
+            <div class="countdown-segment">
+              <span class="countdown-val" id="cd-mins">00</span>
+              <span class="countdown-lbl">Mins</span>
+            </div>
+            <div class="countdown-divider">:</div>
+            <div class="countdown-segment">
+              <span class="countdown-val" id="cd-secs" style="color: var(--accent);">00</span>
+              <span class="countdown-lbl">Secs</span>
+            </div>
+          </div>
+          
+          <div style="display: flex; gap: 15px; margin-top: 25px; flex-wrap: wrap;">
+            <a href="register.html" class="btn btn-primary" id="hero-cta">Register Team</a>
+            <a href="#problems" class="btn btn-secondary">Explore 40 Problems</a>
+          </div>
+        </div>
+        
+        <!-- Big Interactive Morphing Particle Canvas on Right -->
+        <div id="logo-canvas-container">
+          <canvas id="logo-canvas" style="display: block; width: 100%; height: 100%; cursor: crosshair;"></canvas>
+        </div>
       </div>
     </section>
 
-    <section id="about" style="padding: 60px 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px;">
-      <div class="card">
-        <h3 style="color: var(--primary); margin-bottom: 15px; font-size: 20px;">💡 Predefined Challenge Tracks</h3>
-        <p style="color: var(--text-muted); font-size: 15px;">Choose from curated, high-impact problem domains including HealthTech, Green Energy Trading, Gamified EdTech, and Smart Logistics to address critical real-world issues.</p>
+    <!-- Partners section -->
+    <section style="padding: 40px 0; text-align: center; border-top: 1px solid rgba(255,255,255,0.05); border-bottom: 1px solid rgba(255,255,255,0.05);">
+      <p style="font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; letter-spacing: 2px; color: var(--text-muted); margin-bottom: 20px;">Proudly Partnered With</p>
+      <div style="display: flex; justify-content: center; align-items: center; gap: 40px; flex-wrap: wrap; opacity: 0.85;">
+        <h3 style="font-family: var(--font-display); font-weight: 800; color: var(--white); font-size: 22px; letter-spacing: 2px;">E-CELL SIT</h3>
+        <h3 style="font-family: var(--font-display); font-weight: 800; color: var(--primary); font-size: 22px; letter-spacing: 2px;">EUREKA</h3>
+        <h3 style="font-family: var(--font-display); font-weight: 800; color: var(--accent); font-size: 22px; letter-spacing: 2px;">NEC CHALLENGE</h3>
       </div>
-      <div class="card">
-        <h3 style="color: var(--secondary); margin-bottom: 15px; font-size: 20px;">🛠 Custom Innovation</h3>
-        <p style="color: var(--text-muted); font-size: 15px;">Have your own disruptive startup concept? Select the custom track and write your own problem statement to showcase your unique business blueprint.</p>
+    </section>
+
+    <!-- Problem Statements section -->
+    <section id="problems">
+      <div class="section-header">
+        <span class="section-tag">COMPETITION CHALLENGES</span>
+        <h2 class="section-title">40 Predefined Problem Statements</h2>
+        <p style="color: var(--text-muted); font-size: 15px;">Search by keyword or filter by categories like Software, Hardware, Biotech, and AI & Data to find the challenge you want to tackle.</p>
       </div>
-      <div class="card">
-        <h3 style="color: var(--accent); margin-bottom: 15px; font-size: 20px;">🛡 Real-Time Evaluation</h3>
-        <p style="color: var(--text-muted); font-size: 15px;">Keep track of your team validation progress directly from your dashboard. Receive personalized admin feedback, instructions, and files from competition organizers.</p>
+
+      <div class="search-filter-wrapper">
+        <div class="search-box-container">
+          <svg class="search-icon-svg" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+          </svg>
+          <input type="text" id="problem-search" class="search-input" placeholder="Search problems (e.g. tracking, attendance, security)...">
+        </div>
+
+        <div class="category-tags">
+          <button class="category-btn active" data-category="all">All Tracks</button>
+          <button class="category-btn" data-category="AI & Data">AI & Data</button>
+          <button class="category-btn" data-category="Software">Software</button>
+          <button class="category-btn" data-category="Hardware">Hardware</button>
+          <button class="category-btn" data-category="Biotech">Biotech</button>
+        </div>
+      </div>
+
+      <div class="problems-container" id="problems-grid">
+        <!-- Rendered dynamically by JavaScript -->
+      </div>
+    </section>
+
+    <hr class="neon-line">
+
+    <!-- Timeline Roadmap section -->
+    <section id="timeline" class="timeline-roadmap">
+      <div class="section-header">
+        <span class="section-tag">COMPETITION TIMELINE</span>
+        <h2 class="section-title">Journey & Milestones</h2>
+        <p style="color: var(--text-muted); font-size: 15px;">Track your path from online registration to the live Grand Finale stage at SIT Tech Fest 2026.</p>
+      </div>
+
+      <div class="timeline-line"></div>
+      <div class="timeline-progress" id="timeline-scroll-progress"></div>
+
+      <div class="timeline-nodes">
+        <!-- Rendered dynamically by configuration API -->
+      </div>
+    </section>
+
+    <hr class="neon-line">
+
+    <!-- Guidelines tab section -->
+    <section id="guidelines" style="padding: 40px 0;">
+      <div class="section-header">
+        <span class="section-tag">COMPETITION RULEBOOK</span>
+        <h2 class="section-title">Manual & Guidelines</h2>
+        <p style="color: var(--text-muted); font-size: 15px;">Read the complete rules governing the event tracks, registrations, and formatting requirements.</p>
+      </div>
+
+      <div class="tabs-navigation">
+        <button class="tab-trigger active" data-tab="general-tab">General Rules</button>
+        <button class="tab-trigger" data-tab="registration-tab">Team Registration</button>
+        <button class="tab-trigger" data-tab="submission-tab">Pitch Submissions</button>
+      </div>
+
+      <div class="card" style="padding: 40px;">
+        <div id="general-tab" class="tab-content active">
+          <div class="guidelines-details">
+            <div class="guidelines-item">
+              <h4>Pitch Timing & Q&A</h4>
+              <p>Each team is allotted exactly 7 to 8 minutes to deliver their pitch deck to the judging panel, followed by a 10 to 12 minute Q&A session. Timings are strictly monitored.</p>
+            </div>
+            <div class="guidelines-item">
+              <h4>Language & Attire</h4>
+              <p>Pitching must be done in English. The Q&A session can be in English or Hindi based on the team's comfort level. Formal business wear is compulsory for all members.</p>
+            </div>
+            <div class="guidelines-item">
+              <h4>Branding Requirements</h4>
+              <p>All submitted slides must feature the official NEC, E-Cell SIT, and EUREKA partner logos clearly visible on the top or bottom margins.</p>
+            </div>
+          </div>
+        </div>
+
+        <div id="registration-tab" class="tab-content">
+          <div class="guidelines-details">
+            <div class="guidelines-item">
+              <h4>Roster Size & Leadership</h4>
+              <p>Teams must have a minimum of 1 member and a maximum of 5 members. The designated Team Leader must initiate the sign-up and manage the roster entries.</p>
+            </div>
+            <div class="guidelines-item">
+              <h4>Student Roster Verification</h4>
+              <p>Open exclusively to SIT Degree and Diploma students. Leaders must enter the correct names, college enrollment numbers, semesters, emails, and phone numbers for all members.</p>
+            </div>
+            <div class="guidelines-item">
+              <h4>Auto-Save & Editing</h4>
+              <p> Roster registrations continuously auto-save prior to lock. You can add or swap members via your Student Dashboard before the deadline.</p>
+            </div>
+          </div>
+        </div>
+
+        <div id="submission-tab" class="tab-content">
+          <div class="guidelines-details">
+            <div class="guidelines-item">
+              <h4>PPT & Document Formats</h4>
+              <p>Files must be uploaded in .ppt, .pptx, or .pdf format. Supporting reports or spreadsheets must be in .doc, .docx, or .pdf format. Max file size is 10MB per file.</p>
+            </div>
+            <div class="guidelines-item">
+              <h4>Digital receipts</h4>
+              <p>Every successful upload triggers a digital receipt on the dashboard. Revision uploads are allowed dynamically prior to the locked final closing date.</p>
+            </div>
+            
+            <div style="border-top: 1px solid rgba(255,255,255,0.05); padding-top: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+              <div>
+                <h4 style="color: var(--white); margin-bottom: 4px;">Eureka2026_PitchDeck_Template.pptx</h4>
+                <p style="color: var(--text-muted); font-size: 13px;">Official slides template featuring mandatory E-Cell, NEC, and Eureka partner logos.</p>
+              </div>
+              <a href="Eureka2026_PitchDeck_Template.pptx" download class="btn btn-primary btn-sm">Download Template</a>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
   </main>
 
-  <footer style="margin-top: 80px; padding: 30px 0; text-align: center; border-top: 1px solid var(--panel-border); font-size: 14px; color: var(--text-muted);">
-    <div class="container">
-      <p>&copy; 2026 Eureka Startup Competition. All rights reserved.</p>
+  <footer>
+    <div class="container" style="text-align: center;">
+      <p>&copy; 2026 Eureka Startup Competition. All rights reserved. Organized by EPIC E-Cell SIT.</p>
     </div>
   </footer>
 
+  <!-- Scripts -->
+  <script src="js/config.js"></script>
+  <script src="js/problems-data.js"></script>
   <script src="js/transitions.js"></script>
+  <script src="js/canvas-logo.js"></script>
+  
   <script>
-    // Session state check on load to adjust Navbar
-    fetch('/api/auth/me')
+    // Global Clock handler
+    let clockInterval = null;
+    function initializeClock(targetDate) {
+      if (clockInterval) clearInterval(clockInterval);
+      
+      function updateClock() {
+        const t = targetDate - new Date();
+        if (t <= 0) {
+          document.getElementById('cd-days').innerText = '00';
+          document.getElementById('cd-hours').innerText = '00';
+          document.getElementById('cd-mins').innerText = '00';
+          document.getElementById('cd-secs').innerText = '00';
+          clearInterval(clockInterval);
+          return;
+        }
+        
+        const days = Math.floor(t / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((t / (1000 * 60 * 60)) % 24);
+        const mins = Math.floor((t / 1000 / 60) % 60);
+        const secs = Math.floor((t / 1000) % 60);
+        
+        document.getElementById('cd-days').innerText = String(days).padStart(2, '0');
+        document.getElementById('cd-hours').innerText = String(hours).padStart(2, '0');
+        document.getElementById('cd-mins').innerText = String(mins).padStart(2, '0');
+        document.getElementById('cd-secs').innerText = String(secs).padStart(2, '0');
+      }
+      
+      updateClock();
+      clockInterval = setInterval(updateClock, 1000);
+    }
+
+    // Dynamic timeline stages icons mapper
+    function getStageIconSvg(iconName) {
+      const icons = {
+        dollar: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color: var(--accent);"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"></path></svg>`,
+        clock: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color: var(--primary);"><circle cx="12" cy="12" r="10"></circle><path d="M12 6v6l4 2"></path></svg>`,
+        shield: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color: var(--primary);"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>`,
+        users: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color: var(--primary);"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 00-3-3.87m-4-12a4 4 0 010 7.75"></path></svg>`,
+        star: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color: var(--warning);"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>`
+      };
+      return icons[iconName] || icons.clock;
+    }
+
+    // Dynamic rendering of timeline stages
+    function renderTimelineStages(stages) {
+      const container = document.querySelector('.timeline-nodes');
+      if (!container || !stages || stages.length === 0) return;
+      
+      container.innerHTML = stages.map((stage, idx) => {
+        const isActive = stage.status === 'Active';
+        const isFinal = stage.status === 'Final';
+        
+        let statusClass = 'status-upcoming';
+        if (isActive) statusClass = 'status-active';
+        if (isFinal) statusClass = 'status-final';
+        
+        return `
+          <div class="timeline-item ${isActive ? 'active' : ''}">
+            <div class="timeline-indicator">
+              ${getStageIconSvg(stage.icon)}
+            </div>
+            <div class="timeline-card-side">
+              <div class="card">
+                <div class="timeline-meta-box">
+                  <span class="timeline-status ${statusClass}">${stage.status}</span>
+                  <span style="color: var(--primary); font-size: 12px; font-family: var(--font-mono);">${escapeHtml(stage.date)}</span>
+                </div>
+                <h3 style="font-family: var(--font-display); color: var(--white); font-size: 18px; margin-bottom: 10px;">${escapeHtml(stage.title)}</h3>
+                <p style="color: var(--text-muted); font-size: 14px;">${escapeHtml(stage.description)}</p>
+                <div style="border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px; margin-top: 10px; font-size: 12px; font-family: var(--font-mono); color: var(--accent);">
+                  Deliverable: <span style="color: var(--white); font-weight: 600;">${escapeHtml(stage.deliverable || '—')}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Escape HTML helper
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    // Fetch dynamic competition settings on load
+    fetch((window.API_BASE || "") + '/api/competition/config')
+      .then(res => res.json())
+      .then(data => {
+        // Initialize clock deadline
+        const targetDate = new Date(data.countdown_deadline);
+        initializeClock(targetDate);
+        
+        // Render timeline
+        renderTimelineStages(data.stages);
+      })
+      .catch(err => {
+        console.error("Failed to load competition config:", err);
+        // Default static rolling fallback
+        const fallback = new Date();
+        fallback.setDate(fallback.getDate() + 8);
+        initializeClock(fallback);
+      });
+
+    // Dynamic rendering of 40 Problem Statements
+    const problemsGrid = document.getElementById('problems-grid');
+    const searchInput = document.getElementById('problem-search');
+    const categoryBtns = document.querySelectorAll('.category-btn');
+    
+    let activeCategory = 'all';
+    let searchQuery = '';
+
+    function renderProblems() {
+      if (!window.EUREKA_PROBLEMS) return;
+      
+      const filtered = window.EUREKA_PROBLEMS.filter(p => {
+        const matchesCategory = activeCategory === 'all' || p.category === activeCategory;
+        const matchesSearch = p.title.toLowerCase().includes(searchQuery) ||
+                              p.overview.toLowerCase().includes(searchQuery) ||
+                              p.problem.toLowerCase().includes(searchQuery) ||
+                              p.code.toLowerCase().includes(searchQuery);
+        return matchesCategory && matchesSearch;
+      });
+
+      if (filtered.length === 0) {
+        problemsGrid.innerHTML = `
+          <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--text-muted);">
+            🔍 No problem statements match your search criteria. Try a different keyword.
+          </div>
+        `;
+        return;
+      }
+
+      problemsGrid.innerHTML = filtered.map(p => `
+        <div class="card problem-card">
+          <div class="problem-meta">
+            <span class="problem-code">${p.code}</span>
+            <span class="problem-category">${p.category}</span>
+          </div>
+          <h3 class="problem-title">${p.title}</h3>
+          <div class="problem-details">
+            <p><strong>Overview:</strong> ${p.overview}</p>
+            <div class="problem-detail-item">
+              <p><strong>The Challenge:</strong> ${p.problem}</p>
+            </div>
+            <div class="problem-detail-item" style="border:none; padding:0;">
+              <p><strong>Impact:</strong> <span style="color: var(--accent);">${p.impact}</span></p>
+            </div>
+            <div style="margin-top: 15px;">
+              <a href="register.html?problem_code=${p.code}&problem_title=${encodeURIComponent(p.title)}" class="btn btn-secondary btn-sm" style="width:100%;">Tackle This Problem</a>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    searchInput.addEventListener('input', (e) => {
+      searchQuery = e.target.value.toLowerCase().trim();
+      renderProblems();
+    });
+
+    categoryBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        categoryBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        activeCategory = btn.getAttribute('data-category');
+        renderProblems();
+      });
+    });
+
+    // Render initially
+    renderProblems();
+
+    // Timeline Linked Scroll progress
+    window.addEventListener('scroll', () => {
+      const timeline = document.getElementById('timeline');
+      const progress = document.getElementById('timeline-scroll-progress');
+      if (!timeline || !progress) return;
+      
+      const rect = timeline.getBoundingClientRect();
+      const viewHeight = window.innerHeight;
+      
+      const totalHeight = rect.height;
+      const visibleTop = rect.top;
+      
+      let scrolled = (viewHeight - visibleTop) / (totalHeight + viewHeight * 0.4);
+      scrolled = Math.min(Math.max(scrolled, 0), 1);
+      
+      progress.style.height = `${scrolled * 100}%`;
+    });
+
+    // Guidelines Tab switching
+    const tabTriggers = document.querySelectorAll('.tab-trigger');
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    tabTriggers.forEach(trigger => {
+      trigger.addEventListener('click', () => {
+        tabTriggers.forEach(t => t.classList.remove('active'));
+        tabContents.forEach(c => c.classList.remove('active'));
+        
+        trigger.classList.add('active');
+        const tabId = trigger.getAttribute('data-tab');
+        document.getElementById(tabId).classList.add('active');
+      });
+    });
+
+    // Auth navbar check
+    fetch((window.API_BASE || "") + '/api/auth/me')
       .then(res => {
         if (res.ok) return res.json();
         throw new Error();
@@ -92,8 +472,8 @@
         
         // Update nav links
         authLinks.innerHTML = `
-          <li><a href="${dashboardUrl}">Dashboard</a></li>
-          <li><button onclick="logout()" class="btn btn-secondary btn-sm" style="background: none; border: 1px solid var(--panel-border-glow); padding: 6px 14px; cursor: pointer; color: var(--text-main);">Logout</button></li>
+          <li><a href="${dashboardUrl}" class="btn btn-primary btn-sm">Dashboard</a></li>
+          <li><button onclick="logout()" class="btn btn-secondary btn-sm" style="cursor: pointer;">Logout</button></li>
         `;
         
         // Update CTA
@@ -102,12 +482,10 @@
           heroCta.href = dashboardUrl;
         }
       })
-      .catch(() => {
-        // Session not authenticated, keep default login/register links
-      });
+      .catch(() => {});
 
     function logout() {
-      fetch('/api/auth/logout', { method: 'POST' })
+      fetch((window.API_BASE || "") + '/api/auth/logout', { method: 'POST' })
         .then(() => window.navigateTo('index.html'));
     }
   </script>

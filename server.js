@@ -786,6 +786,62 @@ app.delete('/api/admin/notes/:id', requireAdmin, async (req, res) => {
   }
 });
 
+// ----------------------------------------------------
+// COMPETITION CONFIGURATION ENDPOINTS
+// ----------------------------------------------------
+
+// Get active configuration (deadline and stages)
+app.get('/api/competition/config', async (req, res) => {
+  try {
+    const deadlineRow = await dbQuery.get('SELECT value FROM settings WHERE key = ?', ['countdown_deadline']);
+    const stagesRow = await dbQuery.get('SELECT value FROM settings WHERE key = ?', ['stages']);
+    
+    res.json({
+      countdown_deadline: deadlineRow ? deadlineRow.value : '2026-09-30T23:59:59',
+      stages: stagesRow ? JSON.parse(stagesRow.value) : []
+    });
+  } catch (error) {
+    console.error('Fetch Config Error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Update configuration (Admin only)
+app.put('/api/admin/competition/config', requireAdmin, async (req, res) => {
+  const { countdown_deadline, stages } = req.body;
+  
+  if (!countdown_deadline || !stages) {
+    return res.status(400).json({ error: 'Deadline and stages are required' });
+  }
+  
+  try {
+    if (isNaN(Date.parse(countdown_deadline))) {
+      return res.status(400).json({ error: 'Invalid deadline timestamp' });
+    }
+    
+    let stagesStr = '';
+    if (typeof stages === 'string') {
+      stagesStr = stages;
+      const parsed = JSON.parse(stages);
+      if (!Array.isArray(parsed)) {
+        return res.status(400).json({ error: 'Stages must be an array' });
+      }
+    } else if (Array.isArray(stages)) {
+      stagesStr = JSON.stringify(stages);
+    } else {
+      return res.status(400).json({ error: 'Stages must be a JSON array' });
+    }
+    
+    await dbQuery.run('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', ['countdown_deadline', countdown_deadline]);
+    await dbQuery.run('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', ['stages', stagesStr]);
+    
+    res.json({ message: 'Competition settings updated successfully' });
+  } catch (error) {
+    console.error('Update Config Error:', error);
+    res.status(500).json({ error: 'Internal server error or invalid stages format' });
+  }
+});
+
 // Start Express Server
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server is running on port ${PORT}`);

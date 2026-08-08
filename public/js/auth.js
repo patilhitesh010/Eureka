@@ -1,4 +1,5 @@
 // Common Authentication & Form Processing Helpers
+// Updated to support dynamic API_BASE for Vercel proxy compatibility
 
 // Display alert messages on panels
 function showAlert(containerId, message, type = 'error') {
@@ -31,7 +32,9 @@ if (loginForm) {
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
     
-    fetch('/api/auth/login', {
+    const apiBase = window.API_BASE || "";
+    
+    fetch(apiBase + '/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password })
@@ -73,7 +76,9 @@ if (registerForm) {
       return;
     }
     
-    fetch('/api/auth/register', {
+    const apiBase = window.API_BASE || "";
+    
+    fetch(apiBase + '/api/auth/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, email, password })
@@ -100,7 +105,9 @@ if (registerForm) {
 const logoutBtn = document.getElementById('logout-btn');
 if (logoutBtn) {
   logoutBtn.addEventListener('click', () => {
-    fetch('/api/auth/logout', { method: 'POST' })
+    const apiBase = window.API_BASE || "";
+    
+    fetch(apiBase + '/api/auth/logout', { method: 'POST' })
       .then(() => {
         if (typeof window.navigateTo === 'function') {
           window.navigateTo('login.html');

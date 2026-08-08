@@ -1,49 +1,50 @@
 // Student Dashboard Controller
+// Revamped with premium visuals, drag-and-drop zones, and dynamic preselection
 
 let currentUser = null;
 
 // Problem Statement Predefined Options
 const PREDEFINED_PROBLEMS = [
-  "1. Small Business Owners Can't Use AI Properly",
-  "2. AI Needs Too Much Electricity and Space",
-  "3. Creating Content for Different Platforms Takes Too Long",
-  "4. Finding the Right People for Special Jobs",
-  "5. Students Can't Find Affordable Housing",
-  "6. Rural Artisans Are Cut Off from Global Markets",
-  "7. Women Face Safety Risks in Public Transport",
-  "8. Elderly Citizens Lack Reliable Daily Assistance",
-  "9. Rural Areas Face Delays in Essential Deliveries",
-  "10. Local Hidden Gems Lack Visibility to Tourists",
-  "11. Community Recycling is Inconvenient and Unrewarding",
-  "12. Low-Cost High-Level Tracking System for Packages",
-  "13. Real-Time Public Transport Tracking for Small Cities",
-  "14. Automated Student Attendance Monitoring and Analytics System for Colleges",
-  "15. Smart Classroom & Timetable Scheduler",
-  "16. Smart Inventory & Theft Prevention for Retail Stores",
-  "17. Smart Water Tank & Leakage Detection System",
-  "18. Universal Smart Medicine Box",
-  "19. AI-Based Vehicle Health Device",
-  "20. Smart Construction Site Monitoring",
-  "21. Cold Chain in a Box",
-  "22. Earthquake-Stabilised Dialysis System for Patient Safety During Seismic Events",
-  "23. Non-Revenue Loss in Water Supply & Water Conservation Awareness",
-  "24. Digital Mental Health and Psychological Support System for Students in Higher Education",
-  "25. Smart Traffic Management System for Urban Congestion",
-  "26. Automated Compliance Checker for Legal Metrology Declarations on E-Commerce Platforms",
-  "27. Crowdsourced Civic Issue Reporting and Resolution System",
-  "28. Platform Matching Blood/Organ Donors with Recipients in Real-Time",
-  "29. Data Breach Exposure Checker with Actionable Remediation Steps",
-  "30. AI-Powered Playlist Generator Based on Mood Detected from Text/Voice",
-  "31. Micro-Investment App for Users to Round Up Purchases into Savings",
-  "32. Child Safety App for Monitoring App Usage Without Invasive Spying",
-  "33. Fair-Trade Certification Verification via Blockchain",
-  "34. Carbon Footprint Tracker for Daily Consumer Purchases",
-  "35. Automated Student Attendance Monitoring and Analytics System for Colleges",
-  "36. Digital India 2.0: AI for Rural Transformation",
-  "37. The Future Smart City Challenge",
-  "38. Climate Crisis Innovation Challenge",
-  "39. Healthcare Beyond Hospitals",
-  "40. The Impossible Challenge: Reinvent the Internet"
+  "PS-01. Small Business Owners Can't Use AI Properly",
+  "PS-02. AI Needs Too Much Electricity and Space",
+  "PS-03. Creating Content for Different Platforms Takes Too Long",
+  "PS-04. Finding the Right People for Special Jobs",
+  "PS-05. Students Can't Find Affordable Housing",
+  "PS-06. Rural Artisans Are Cut Off from Global Markets",
+  "PS-07. Women Face Safety Risks in Public Transport",
+  "PS-08. Elderly Citizens Lack Reliable Daily Assistance",
+  "PS-09. Rural Areas Face Delays in Essential Deliveries",
+  "PS-10. Local Hidden Gems Lack Visibility to Tourists",
+  "PS-11. Community Recycling is Inconvenient and Unrewarding",
+  "PS-12. Low-Cost High-Level Tracking System for Packages",
+  "PS-13. Real-Time Public Transport Tracking for Small Cities",
+  "PS-14. Automated Student Attendance Monitoring and Analytics System for Colleges",
+  "PS-15. Smart Classroom & Timetable Scheduler",
+  "PS-16. Smart Inventory & Theft Prevention for Retail Stores",
+  "PS-17. Smart Water Tank & Leakage Detection System",
+  "PS-18. Universal Smart Medicine Box",
+  "PS-19. AI-Based Vehicle Health Device",
+  "PS-20. Smart Construction Site Monitoring",
+  "PS-21. Cold Chain in a Box",
+  "PS-22. Earthquake-Stabilised Dialysis System for Patient Safety During Seismic Events",
+  "PS-23. Non-Revenue Loss in Water Supply & Water Conservation Awareness",
+  "PS-24. Digital Mental Health and Psychological Support System for Students in Higher Education",
+  "PS-25. Smart Traffic Management System for Urban Congestion",
+  "PS-26. Automated Compliance Checker for Legal Metrology Declarations on E-Commerce Platforms",
+  "PS-27. Crowdsourced Civic Issue Reporting and Resolution System",
+  "PS-28. Platform Matching Blood/Organ Donors with Recipients in Real-Time",
+  "PS-29. Data Breach Exposure Checker with Actionable Remediation Steps",
+  "PS-30. AI-Powered Playlist Generator Based on Mood Detected from Text/Voice",
+  "PS-31. Micro-Investment App for Users to Round Up Purchases into Savings",
+  "PS-32. Child Safety App for Monitoring App Usage Without Invasive Spying",
+  "PS-33. Fair-Trade Certification Verification via Blockchain",
+  "PS-34. Carbon Footprint Tracker for Daily Consumer Purchases",
+  "PS-35. Automated Student Attendance Monitoring and Analytics System for Colleges",
+  "PS-36. Digital India 2.0: AI for Rural Transformation",
+  "PS-37. The Future Smart City Challenge",
+  "PS-38. Climate Crisis Innovation Challenge",
+  "PS-39. Healthcare Beyond Hospitals",
+  "PS-40. The Impossible Challenge: Reinvent the Internet"
 ];
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -52,7 +53,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Authenticate session and load data
 function verifySessionAndInit() {
-  fetch('/api/auth/me')
+  const apiBase = window.API_BASE || "";
+  fetch(apiBase + '/api/auth/me')
     .then(async (res) => {
       const data = await res.json();
       if (!res.ok) throw new Error();
@@ -74,7 +76,7 @@ function verifySessionAndInit() {
       document.getElementById('profile-email').value = currentUser.email;
       
       if (currentUser.profile_pic) {
-        document.getElementById('profile-avatar-preview').src = currentUser.profile_pic;
+        document.getElementById('profile-avatar-preview').src = apiBase + currentUser.profile_pic;
       }
       
       // Bind Avatar Upload Preview
@@ -99,9 +101,7 @@ function verifySessionAndInit() {
     });
 }
 
-// ----------------------------------------------------
 // PROFILE FORM SUBMISSION
-// ----------------------------------------------------
 const profileForm = document.getElementById('profile-form');
 if (profileForm) {
   profileForm.addEventListener('submit', (e) => {
@@ -109,10 +109,11 @@ if (profileForm) {
     clearAlert('dashboard-alert');
     
     const formData = new FormData(profileForm);
+    const apiBase = window.API_BASE || "";
     
-    fetch('/api/profile', {
+    fetch(apiBase + '/api/profile', {
       method: 'PUT',
-      body: formData // Send as multipart form data
+      body: formData
     })
     .then(async (res) => {
       const data = await res.json();
@@ -127,7 +128,7 @@ if (profileForm) {
       document.getElementById('profile-name-title').innerText = currentUser.name;
       document.getElementById('user-display-name').innerText = `Leader: ${currentUser.name}`;
       if (currentUser.profile_pic) {
-        document.getElementById('profile-avatar-preview').src = currentUser.profile_pic;
+        document.getElementById('profile-avatar-preview').src = apiBase + currentUser.profile_pic;
       }
       document.getElementById('profile-password').value = ''; // clear password input
     })
@@ -137,13 +138,12 @@ if (profileForm) {
   });
 }
 
-// ----------------------------------------------------
 // LOAD TEAM REGISTRATION DETAILS
-// ----------------------------------------------------
 function loadTeamStatus() {
   const teamCard = document.getElementById('team-card');
+  const apiBase = window.API_BASE || "";
   
-  fetch('/api/team/my-team')
+  fetch(apiBase + '/api/team/my-team')
     .then(async (res) => {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to load team data');
@@ -164,6 +164,7 @@ function loadTeamStatus() {
 // Render active team details
 function renderTeamDetails(team) {
   const teamCard = document.getElementById('team-card');
+  const apiBase = window.API_BASE || "";
   
   // Format status badge
   let badgeClass = 'badge-pending';
@@ -177,7 +178,7 @@ function renderTeamDetails(team) {
       <td>${escapeHtml(m.email)}</td>
       <td>${escapeHtml(m.roll_no || '—')}</td>
       <td>${escapeHtml(m.phone_no || '—')}</td>
-      <td>Member</td>
+      <td><span style="color: var(--text-muted); font-size:12px;">Participant</span></td>
     </tr>
   `).join('');
 
@@ -185,77 +186,78 @@ function renderTeamDetails(team) {
   let fileSection = '';
   if (team.status === 'approved' && team.role_in_team === 'leader') {
     const pptInfo = team.ppt_path
-      ? `<a href="${team.ppt_path}" target="_blank" style="color:var(--primary);">📎 View Uploaded PPT</a>`
-      : '<span style="color:var(--text-muted);">Not uploaded yet</span>';
+      ? `<a href="${apiBase + team.ppt_path}" target="_blank" style="color:var(--accent); font-weight:700; text-decoration:none; display:inline-flex; align-items:center; gap:6px;">📎 View Uploaded Pitch Deck</a>`
+      : '<span style="color:var(--text-muted); font-style:italic;">No slides uploaded yet</span>';
     const docInfo = team.doc_path
-      ? `<a href="${team.doc_path}" target="_blank" style="color:var(--primary);">📎 View Uploaded Document</a>`
-      : '<span style="color:var(--text-muted);">Not uploaded yet</span>';
+      ? `<a href="${apiBase + team.doc_path}" target="_blank" style="color:var(--accent); font-weight:700; text-decoration:none; display:inline-flex; align-items:center; gap:6px;">📎 View Uploaded Document</a>`
+      : '<span style="color:var(--text-muted); font-style:italic;">No reports uploaded yet</span>';
 
     fileSection = `
-      <div id="file-upload-section" style="margin-top:30px; border-top:1px solid var(--panel-border); padding-top:25px;">
-        <h4 style="color:var(--text-highlight); font-size:16px; margin-bottom:15px;">📁 Submit Files</h4>
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:12px;">
+      <div id="file-upload-section" style="margin-top:35px; border-top:1px solid rgba(255,255,255,0.05); padding-top:25px;">
+        <h4 style="color:var(--white); font-family: var(--font-display); font-size:16px; margin-bottom:15px; font-weight:700;">📁 Submit Files & Pitch Deck</h4>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px; background: rgba(255,255,255,0.01); padding: 15px; border-radius: var(--border-radius-md); border: 1px solid rgba(255,255,255,0.03);">
           <div>
-            <p style="font-size:13px; margin-bottom:5px;">Presentation (PPT/PPTX/PDF):</p>
+            <p style="font-size:12px; color: var(--text-muted); margin-bottom:5px;">Executive Presentation (.pptx/.pdf):</p>
             ${pptInfo}
           </div>
           <div>
-            <p style="font-size:13px; margin-bottom:5px;">Supporting Document (DOC/DOCX/PDF):</p>
+            <p style="font-size:12px; color: var(--text-muted); margin-bottom:5px;">Supporting PDF/Report (.docx/.pdf):</p>
             ${docInfo}
           </div>
         </div>
-        <form id="file-upload-form" enctype="multipart/form-data">
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
+        
+        <form id="file-upload-form" enctype="multipart/form-data" style="display: flex; flex-direction: column; gap: 20px;">
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
             <div>
-              <label style="font-size:13px; font-weight:600;">Upload / Replace PPT</label>
-              <input type="file" name="presentation" accept=".ppt,.pptx,.pdf" class="form-control" style="margin-top:6px;">
+              <label style="font-size:11px; font-family: var(--font-display); font-weight:700; color: var(--text-highlight); text-transform:uppercase; letter-spacing:0.5px;">Pitch Presentation File</label>
+              <input type="file" id="ppt-file-input" name="presentation" accept=".ppt,.pptx,.pdf" class="form-control" style="margin-top:6px;">
             </div>
             <div>
-              <label style="font-size:13px; font-weight:600;">Upload / Replace Document</label>
-              <input type="file" name="document" accept=".doc,.docx,.pdf" class="form-control" style="margin-top:6px;">
+              <label style="font-size:11px; font-family: var(--font-display); font-weight:700; color: var(--text-highlight); text-transform:uppercase; letter-spacing:0.5px;">Project Report File</label>
+              <input type="file" id="doc-file-input" name="document" accept=".doc,.docx,.pdf" class="form-control" style="margin-top:6px;">
             </div>
           </div>
-          <button type="submit" class="btn btn-primary" style="width:100%;">Upload Files</button>
+          
+          <button type="submit" class="btn btn-primary" style="width:100%;">Upload Submissions</button>
         </form>
-        <div id="file-upload-alert"></div>
+        <div id="file-upload-alert" style="margin-top: 15px;"></div>
       </div>
     `;
   } else if (team.status === 'pending') {
-    fileSection = `<p style="margin-top:25px; font-size:13px; color:var(--text-muted); text-align:center;">📋 File uploads (PPT &amp; documents) will be enabled once your team is <strong>approved</strong> by an administrator.</p>`;
+    fileSection = `<p style="margin-top:25px; font-size:13px; color:var(--text-muted); text-align:center; padding: 15px; border-radius: var(--border-radius-md); background: rgba(245,158,11,0.03); border: 1px solid rgba(245,158,11,0.15);">📋 Submission upload slots will be unlocked once your team is <strong>approved</strong> by organizers.</p>`;
   } else if (team.status === 'rejected') {
-    fileSection = `<p style="margin-top:25px; font-size:13px; color:var(--error); text-align:center;">❌ Your team registration was rejected. File uploads are not available.</p>`;
+    fileSection = `<p style="margin-top:25px; font-size:13px; color:var(--error); text-align:center; padding: 15px; border-radius: var(--border-radius-md); background: rgba(244,63,94,0.03); border: 1px solid rgba(244,63,94,0.15);">❌ Your team registration was rejected. Submission uploads are locked.</p>`;
   }
 
   teamCard.innerHTML = `
-    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--panel-border); padding-bottom: 15px; margin-bottom: 20px;">
-      <h3 style="font-weight: 700;">🚀 Team: ${escapeHtml(team.team_name)}</h3>
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 15px; margin-bottom: 20px;">
+      <h3 style="font-family: var(--font-display); font-size: 22px; font-weight: 700; color: var(--white);">🚀 Startup Roster: ${escapeHtml(team.team_name)}</h3>
       <span class="badge ${badgeClass}">${team.status}</span>
     </div>
     
-    <div style="margin-bottom: 25px; padding: 15px; background: rgba(168, 85, 247, 0.05); border: 1px solid var(--primary); border-radius: 8px;">
-      <h4 style="color: var(--primary); margin-bottom: 10px; font-size: 16px;">📚 Resource Materials</h4>
-      <p style="font-size: 13px; margin-bottom: 10px;">Download the problem statements and sample PPT to help prepare your submission.</p>
-      <div style="display: flex; gap: 15px;">
-        <a href="Eureka_Problem_Statements.pdf" target="_blank" class="btn btn-secondary btn-sm" style="text-decoration: none;">📄 Problem Statements PDF</a>
-        <a href="Sample_PPT.pdf" target="_blank" class="btn btn-secondary btn-sm" style="text-decoration: none;">📊 Sample PPT</a>
+    <div style="margin-bottom: 25px; padding: 20px; background: rgba(168, 85, 247, 0.04); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: var(--border-radius-md); display: flex; flex-direction: column; gap: 12px;">
+      <h4 style="color: var(--white); font-family: var(--font-display); font-size: 15px; font-weight: 700;">📚 Guidelines & Slide Template</h4>
+      <p style="font-size: 13px; color: var(--text-muted); margin: 0;">Be sure to download the official PPT deck template and integrate E-Cell SIT and NEC partner logos on all slide margins.</p>
+      <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-top: 5px;">
+        <a href="Eureka2026_PitchDeck_Template.pptx" download class="btn btn-secondary btn-sm" style="text-decoration: none;">📊 Download PPT Template</a>
       </div>
     </div>
 
     <div style="margin-bottom: 25px;">
-      <p style="font-size: 14px; margin-bottom: 10px;"><strong>Competition Track:</strong> <span style="text-transform: capitalize; color: var(--primary);">${team.problem_type} Track</span></p>
-      <p style="font-size: 14px;"><strong>Problem Statement:</strong></p>
-      <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--panel-border); padding: 15px; margin-top: 5px; font-size: 14px; white-space: pre-line;">${escapeHtml(team.problem_statement)}</div>
+      <p style="font-size: 14px; margin-bottom: 8px; color: var(--text-highlight);"><strong>Challenge Category:</strong> <span style="color: var(--primary); font-weight: 700; text-transform: uppercase; font-family: var(--font-mono); font-size:12px;">${team.problem_type} Track</span></p>
+      <p style="font-size: 14px; color: var(--text-highlight);"><strong>Locked Problem Statement:</strong></p>
+      <div style="background: rgba(11, 8, 19, 0.4); border: 1px solid var(--panel-border); padding: 18px; margin-top: 8px; border-radius: var(--border-radius-md); font-size: 14px; color: var(--text-muted); line-height: 1.6; white-space: pre-line;">${escapeHtml(team.problem_statement)}</div>
     </div>
 
-    <h4 style="color: var(--text-highlight); margin-bottom: 10px; font-size: 16px;">Team Members</h4>
+    <h4 style="color: var(--white); margin-bottom: 12px; font-family: var(--font-display); font-size: 16px; font-weight: 700;">Team Roster Roll</h4>
     <div class="table-responsive">
       <table>
         <thead>
           <tr>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Roll No</th>
-            <th>Phone No</th>
+            <th>Full Name</th>
+            <th>Email Address</th>
+            <th>Enrollment No</th>
+            <th>Mobile Phone</th>
             <th>Role</th>
           </tr>
         </thead>
@@ -265,7 +267,7 @@ function renderTeamDetails(team) {
             <td>${escapeHtml(team.leader.email)}</td>
             <td>—</td>
             <td>—</td>
-            <td><span style="color: var(--primary); font-weight: bold;">Team Leader</span></td>
+            <td><span style="color: var(--primary); font-weight: 700; font-family: var(--font-mono); font-size:11px; text-transform:uppercase;">Team Leader</span></td>
           </tr>
           ${memberRows}
         </tbody>
@@ -274,10 +276,10 @@ function renderTeamDetails(team) {
 
     ${fileSection}
     
-    <p style="font-size: 12px; color: var(--text-muted); margin-top: 25px; text-align: center;">
+    <p style="font-size: 12px; color: var(--text-muted); margin-top: 30px; text-align: center; font-style: italic;">
       ${team.role_in_team === 'leader' 
-        ? 'As the Team Leader, you can update team profiles. For changes to problem statements or membership, contact an administrator.' 
-        : 'Team details can only be modified by the registered Team Leader or an Organizer.'}
+        ? 'As the Team Leader, you can update team submissions. For alterations to problem statements or roster records, please contact organizers.' 
+        : 'Team settings can only be managed by the registered Team Leader.'}
     </p>
   `;
 
@@ -296,33 +298,32 @@ function renderTeamRegistrationForm() {
   memberCounter = 0;
   
   teamCard.innerHTML = `
-    <h3 style="margin-bottom: 20px; font-weight: 700; border-bottom: 1px solid var(--panel-border); padding-bottom: 10px;">🚀 Team Registration</h3>
+    <h3 style="margin-bottom: 24px; font-family: var(--font-display); border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 12px; font-size: 20px; font-weight: 700; color: var(--white);">🚀 Team Registration</h3>
     
-    <div style="margin-bottom: 25px; padding: 15px; background: rgba(168, 85, 247, 0.05); border: 1px solid var(--primary); border-radius: 8px;">
-      <h4 style="color: var(--primary); margin-bottom: 10px; font-size: 16px;">📚 Resource Materials</h4>
-      <p style="font-size: 13px; margin-bottom: 10px;">Download the problem statements and sample PPT to help prepare your submission.</p>
-      <div style="display: flex; gap: 15px;">
-        <a href="Eureka_Problem_Statements.pdf" target="_blank" class="btn btn-secondary btn-sm" style="text-decoration: none;">📄 Problem Statements PDF</a>
-        <a href="Sample_PPT.pdf" target="_blank" class="btn btn-secondary btn-sm" style="text-decoration: none;">📊 Sample PPT</a>
+    <div style="margin-bottom: 25px; padding: 18px; background: rgba(168, 85, 247, 0.04); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: var(--border-radius-md); display: flex; flex-direction: column; gap: 10px;">
+      <h4 style="color: var(--white); font-family: var(--font-display); font-size: 15px; font-weight:700;">📚 Rulebook Manual & Materials</h4>
+      <p style="font-size: 13px; color: var(--text-muted); margin: 0;">Familiarize yourself with the 40 predefined problem statements and downlaod slide blueprints before locking your selection.</p>
+      <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-top: 5px;">
+        <a href="Eureka2026_PitchDeck_Template.pptx" download class="btn btn-secondary btn-sm" style="text-decoration: none;">📊 Pitch Template</a>
       </div>
     </div>
 
-    <form id="team-register-form">
-      <div class="form-group">
+    <form id="team-register-form" style="display: flex; flex-direction: column; gap: 20px;">
+      <div class="form-group" style="margin:0;">
         <label for="team_name">Team Name</label>
-        <input type="text" id="team_name" class="form-control" placeholder="Enter your startup name" required>
+        <input type="text" id="team_name" class="form-control" placeholder="Enter your startup/project name" required autocomplete="off">
       </div>
 
-      <div class="form-group">
+      <div class="form-group" style="margin:0;">
         <label for="problem_type">Challenge Track</label>
         <select id="problem_type" class="form-control" required onchange="toggleTrackView()">
-          <option value="predefined">Predefined Problem Statement</option>
-          <option value="custom">Custom Innovation Project</option>
+          <option value="predefined">Predefined Problem Statement Track</option>
+          <option value="custom">Custom Innovation Project Track</option>
         </select>
       </div>
 
       <!-- Predefined Selection -->
-      <div class="form-group" id="predefined-select-group">
+      <div class="form-group" id="predefined-select-group" style="margin:0;">
         <label for="predefined_statement">Problem Statement Selector</label>
         <select id="predefined_statement" class="form-control">
           ${PREDEFINED_PROBLEMS.map(p => `<option value="${p}">${p}</option>`).join('')}
@@ -330,243 +331,268 @@ function renderTeamRegistrationForm() {
       </div>
 
       <!-- Custom Description -->
-      <div class="form-group" id="custom-statement-group" style="display: none;">
-        <label for="custom_statement">Define Your Problem Statement</label>
-        <textarea id="custom_statement" class="form-control" rows="4" placeholder="Describe the problem, target audience, and your proposed solution..."></textarea>
+      <div class="form-group" id="custom-statement-group" style="display: none; margin:0;">
+        <label for="custom_statement">Define Your Custom Problem Statement</label>
+        <textarea id="custom_statement" class="form-control" rows="4" placeholder="Describe the problem, target audience, and your proposed startup solution..."></textarea>
       </div>
 
-      <p style="font-size:13px; color:var(--text-muted); margin-top:10px; padding:10px; border:1px solid var(--panel-border);">📋 PPT and document uploads will be available on your dashboard <strong>after your team is approved</strong> by an administrator.</p>
+      <p style="font-size:12px; color:var(--text-muted); padding:12px; border-radius: var(--border-radius-sm); border:1px solid rgba(255,255,255,0.05); background: rgba(255,255,255,0.01); line-height: 1.5; margin:0;">📋 Note: PPT and project document upload slots will be unlocked on your dashboard immediately <strong>after your team is approved</strong> by organizers.</p>
 
       <!-- Team Members Section -->
-      <div style="margin: 30px 0 20px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--panel-border); padding-top: 20px;">
-        <h4 style="color: var(--text-highlight); font-size: 16px;">Team Members (1 to 5)</h4>
+      <div style="margin-top: 15px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 20px;">
+        <h4 style="color: var(--white); font-family: var(--font-display); font-size: 16px; font-weight: 700;">Roster Members (0 to 4 additional)</h4>
         <button type="button" class="btn btn-secondary btn-sm" onclick="addMemberInput()">+ Add Member</button>
       </div>
 
       <div id="members-list-container" class="members-list">
-        <!-- Dynamic member cards are appended here -->
+        <!-- Dynamic member cards -->
       </div>
 
-      <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 30px;">Submit Registration</button>
+      <button type="submit" class="btn btn-primary" style="margin-top: 15px; width: 100%;">Complete Registration</button>
     </form>
   `;
-  
-  // Add first member input automatically (minimum is 1 member)
-  addMemberInput();
-  
-  // Bind form submission
-  const registerForm = document.getElementById('team-register-form');
-  registerForm.addEventListener('submit', handleTeamSubmit);
+
+  // Bind submit event
+  document.getElementById('team-register-form').addEventListener('submit', handleRegistration);
+
+  // Check if there's a preselected problem from index.html
+  const preSelectedCode = sessionStorage.getItem('preselected_problem_code');
+  const preSelectedTitle = sessionStorage.getItem('preselected_problem_title');
+  if (preSelectedCode && preSelectedTitle) {
+    const fullString = `${preSelectedCode}. ${preSelectedTitle}`;
+    const selector = document.getElementById('predefined_statement');
+    
+    // Find matching option in dropdown
+    const options = Array.from(selector.options);
+    const matchedOpt = options.find(opt => opt.value.startsWith(preSelectedCode));
+    if (matchedOpt) {
+      selector.value = matchedOpt.value;
+    }
+    
+    // Clean storage
+    sessionStorage.removeItem('preselected_problem_code');
+    sessionStorage.removeItem('preselected_problem_title');
+    
+    // Auto-scroll to form selector to highlight selection
+    setTimeout(() => {
+      selector.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      selector.style.borderColor = 'var(--accent)';
+      setTimeout(() => selector.style.borderColor = '', 1500);
+    }, 400);
+  }
 }
 
-// Toggle display of predefined dropdown vs custom text area
+// Toggle Predefined/Custom tracks
 window.toggleTrackView = function() {
-  const typeSelect = document.getElementById('problem_type');
+  const problemType = document.getElementById('problem_type').value;
   const predefinedGroup = document.getElementById('predefined-select-group');
   const customGroup = document.getElementById('custom-statement-group');
   
-  if (typeSelect.value === 'predefined') {
+  if (problemType === 'predefined') {
     predefinedGroup.style.display = 'block';
     customGroup.style.display = 'none';
+    document.getElementById('custom_statement').required = false;
   } else {
     predefinedGroup.style.display = 'none';
     customGroup.style.display = 'block';
+    document.getElementById('custom_statement').required = true;
   }
 };
 
-// Dynamic adding of team member inputs (includes roll number)
+// Add member input card
 window.addMemberInput = function() {
   const container = document.getElementById('members-list-container');
-  const count = container.children.length;
-  
-  if (count >= 5) {
-    showAlert('dashboard-alert', 'A team can have a maximum of 5 members.', 'error');
+  if (container.children.length >= 4) {
+    showAlert('dashboard-alert', 'Maximum team size is 5 (Leader + 4 members)', 'error');
     return;
   }
   
   memberCounter++;
-  const memberId = memberCounter;
+  const id = `member-${memberCounter}`;
   
-  const memberDiv = document.createElement('div');
-  memberDiv.className = 'member-item';
-  memberDiv.id = `member-card-${memberId}`;
-  memberDiv.innerHTML = `
+  const card = document.createElement('div');
+  card.className = 'member-item';
+  card.id = id;
+  card.innerHTML = `
     <div class="member-header">
-      <h4>Team Member #${count + 1}</h4>
-      ${count > 0 ? `<button type="button" class="remove-member" onclick="removeMemberInput(${memberId})">Remove</button>` : ''}
+      <h4>Roster Member #${container.children.length + 1}</h4>
+      <button type="button" class="remove-member" onclick="removeMemberInput('${id}')">Remove</button>
     </div>
-    <div class="form-row member-form-grid">
-      <div>
-        <input type="text" placeholder="Full Name" class="form-control member-name" required>
+    <div class="member-form-grid">
+      <div class="form-group" style="margin:0;">
+        <input type="text" placeholder="Full Name" class="form-control member-name" required autocomplete="off">
       </div>
-      <div>
-        <input type="email" placeholder="Email Address" class="form-control member-email" required>
+      <div class="form-group" style="margin:0;">
+        <input type="email" placeholder="Email Address" class="form-control member-email" required autocomplete="off">
       </div>
-      <div>
-        <input type="text" placeholder="Roll No" class="form-control member-roll" required>
+      <div class="form-group" style="margin:0;">
+        <input type="text" placeholder="Enrollment Roll No." class="form-control member-roll" required autocomplete="off">
       </div>
-      <div>
-        <input type="tel" placeholder="Phone No" class="form-control member-phone" required>
+      <div class="form-group" style="margin:0;">
+        <input type="tel" placeholder="Mobile Phone No." class="form-control member-phone" required autocomplete="off">
       </div>
     </div>
   `;
-  container.appendChild(memberDiv);
-  updateMemberHeaders();
+  container.appendChild(card);
+  
+  // Re-index titles of members
+  reindexMemberTitles();
 };
 
-window.removeMemberInput = function(memberId) {
-  const elem = document.getElementById(`member-card-${memberId}`);
-  if (elem) {
-    elem.remove();
-    updateMemberHeaders();
+window.removeMemberInput = function(id) {
+  const card = document.getElementById(id);
+  if (card) {
+    card.remove();
+    reindexMemberTitles();
   }
 };
 
-function updateMemberHeaders() {
+function reindexMemberTitles() {
   const container = document.getElementById('members-list-container');
-  Array.from(container.children).forEach((card, idx) => {
-    card.querySelector('.member-header h4').innerText = `Team Member #${idx + 1}`;
+  Array.from(container.children).forEach((card, index) => {
+    card.querySelector('h4').innerText = `Roster Member #${index + 1}`;
   });
 }
 
-// Handle team submission (multipart form to include files and roll numbers)
-function handleTeamSubmit(e) {
+// HANDLE FILE UPLOAD SUBMISSIONS
+function handleFileUpload(e) {
   e.preventDefault();
-  clearAlert('dashboard-alert');
+  clearAlert('file-upload-alert');
   
-  const team_name = document.getElementById('team_name').value.trim();
-  const problem_type = document.getElementById('problem_type').value;
+  const form = document.getElementById('file-upload-form');
+  const formData = new FormData(form);
+  const apiBase = window.API_BASE || "";
   
-  let problem_statement = '';
-  if (problem_type === 'predefined') {
-    problem_statement = document.getElementById('predefined_statement').value;
-  } else {
-    problem_statement = document.getElementById('custom_statement').value.trim();
-    if (!problem_statement) {
-      showAlert('dashboard-alert', 'Please define your custom problem statement.', 'error');
-      return;
-    }
-  }
-
-  // Compile members (roll_no and phone_no are required)
-  const memberCards = document.querySelectorAll('.member-item');
-  const members = [];
-  let validationError = null;
+  // Verify that at least one file is chosen
+  const pptInput = document.getElementById('ppt-file-input');
+  const docInput = document.getElementById('doc-file-input');
   
-  memberCards.forEach(card => {
-    const name = card.querySelector('.member-name').value.trim();
-    const email = card.querySelector('.member-email').value.trim();
-    const roll_no = card.querySelector('.member-roll') ? card.querySelector('.member-roll').value.trim() : '';
-    const phone_no = card.querySelector('.member-phone') ? card.querySelector('.member-phone').value.trim() : '';
-    if (!name || !email) return;
-    if (!roll_no) { validationError = `Roll number is required for member: ${name}`; return; }
-    if (!phone_no) { validationError = `Phone number is required for member: ${name}`; return; }
-    members.push({ name, email, roll_no, phone_no });
-  });
-
-  if (validationError) {
-    showAlert('dashboard-alert', validationError, 'error');
+  if (!pptInput.files[0] && !docInput.files[0]) {
+    showAlert('file-upload-alert', 'Please select at least one file to upload.', 'error');
     return;
   }
-
-  if (members.length < 1 || members.length > 5) {
-    showAlert('dashboard-alert', 'Team must contain between 1 and 5 members.', 'error');
-    return;
-  }
-
-  // Send as JSON (no files at registration)
-  fetch('/api/team/register', {
+  
+  fetch(apiBase + '/api/team/upload-files', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ team_name, problem_type, problem_statement, members })
+    body: formData
   })
   .then(async (res) => {
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Failed to submit registration');
+    if (!res.ok) throw new Error(data.error || 'Failed to upload submissions');
     return data;
   })
-  .then(() => {
-    showAlert('dashboard-alert', 'Team registered successfully! Confirmation email has been sent.', 'success');
-    setTimeout(loadTeamStatus, 2000);
+  .then((data) => {
+    showAlert('file-upload-alert', 'Files uploaded successfully!', 'success');
+    // Reload team card to show new file links
+    setTimeout(loadTeamStatus, 1500);
+  })
+  .catch((err) => {
+    showAlert('file-upload-alert', err.message, 'error');
+  });
+}
+
+// TEAM REGISTRATION SUBMISSION
+function handleRegistration(e) {
+  e.preventDefault();
+  clearAlert('dashboard-alert');
+  
+  const teamName = document.getElementById('team_name').value.trim();
+  const problemType = document.getElementById('problem_type').value;
+  
+  let problemStatement = "";
+  if (problemType === 'predefined') {
+    problemStatement = document.getElementById('predefined_statement').value;
+  } else {
+    problemStatement = document.getElementById('custom_statement').value.trim();
+  }
+  
+  // Aggregate member rosters
+  const memberCards = document.querySelectorAll('.member-item');
+  const members = [];
+  
+  for (const card of memberCards) {
+    const name = card.querySelector('.member-name').value.trim();
+    const email = card.querySelector('.member-email').value.trim();
+    const roll_no = card.querySelector('.member-roll').value.trim();
+    const phone_no = card.querySelector('.member-phone').value.trim();
+    
+    if (!name || !email || !roll_no || !phone_no) {
+      showAlert('dashboard-alert', 'All member fields are mandatory.', 'error');
+      return;
+    }
+    members.push({ name, email, roll_no, phone_no });
+  }
+  
+  const payload = {
+    team_name: teamName,
+    problem_type: problemType,
+    problem_statement: problemStatement,
+    members: members
+  };
+  
+  const apiBase = window.API_BASE || "";
+  
+  fetch(apiBase + '/api/team/register', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  })
+  .then(async (res) => {
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to complete registration');
+    return data;
+  })
+  .then((data) => {
+    showAlert('dashboard-alert', 'Team registered successfully!', 'success');
+    setTimeout(loadTeamStatus, 1500);
   })
   .catch((err) => {
     showAlert('dashboard-alert', err.message, 'error');
   });
 }
 
-// Handle file upload after team approval
-function handleFileUpload(e) {
-  e.preventDefault();
-  const alertEl = document.getElementById('file-upload-alert');
-  if (alertEl) alertEl.innerHTML = '';
-
-  const form = document.getElementById('file-upload-form');
-  const formData = new FormData(form);
-
-  // Check at least one file selected
-  const pptFile = form.querySelector('input[name="presentation"]').files[0];
-  const docFile = form.querySelector('input[name="document"]').files[0];
-  if (!pptFile && !docFile) {
-    if (alertEl) alertEl.innerHTML = '<p style="color:var(--error); margin-top:8px;">Please select at least one file to upload.</p>';
-    return;
-  }
-
-  const submitBtn = form.querySelector('button[type="submit"]');
-  if (submitBtn) submitBtn.disabled = true;
-
-  fetch('/api/team/upload-files', {
-    method: 'POST',
-    body: formData
-  })
-  .then(async (res) => {
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Upload failed');
-    return data;
-  })
-  .then(() => {
-    if (alertEl) alertEl.innerHTML = '<p style="color:var(--success, #22c55e); margin-top:8px;">✅ Files uploaded successfully!</p>';
-    setTimeout(loadTeamStatus, 1500);
-  })
-  .catch((err) => {
-    if (alertEl) alertEl.innerHTML = `<p style="color:var(--error); margin-top:8px;">${err.message}</p>`;
-    if (submitBtn) submitBtn.disabled = false;
-  });
-}
-
-// ----------------------------------------------------
-// LOAD NOTICES AND ADMIN NOTES
-// ----------------------------------------------------
+// LOAD ORGANIZER ANNOUNCEMENTS
 function loadStudentNotes() {
   const container = document.getElementById('notes-container');
+  const apiBase = window.API_BASE || "";
   
-  fetch('/api/student/notes')
+  fetch(apiBase + '/api/student/notes')
     .then(async (res) => {
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to load notices');
+      if (!res.ok) throw new Error();
       return data;
     })
     .then((data) => {
-      if (data.notes && data.notes.length > 0) {
-        container.innerHTML = data.notes.map(note => `
-          <div class="note-card">
-            <p style="font-size: 14px; white-space: pre-line;">${escapeHtml(note.note_text)}</p>
-            ${note.image_path ? `<img src="${note.image_path}" alt="Notice Attachment" onerror="this.style.display='none'">` : ''}
-            <div class="note-meta">
-              <span>Organizer Office</span>
-              <span>${new Date(note.created_at).toLocaleString()}</span>
-            </div>
-          </div>
-        `).join('');
-      } else {
-        container.innerHTML = `<p style="color: var(--text-muted); text-align: center; padding: 20px 0;">No notices or notes assigned to your dashboard.</p>`;
+      if (!data.notes || data.notes.length === 0) {
+        container.innerHTML = `<p style="color: var(--text-muted); text-align: center; padding: 20px 0; font-size:13px;">No announcements from organizers yet.</p>`;
+        return;
       }
+      
+      container.innerHTML = data.notes.map(note => {
+        const timeStr = new Date(note.created_at).toLocaleString();
+        let imgHtml = '';
+        if (note.image_path) {
+          imgHtml = `<img src="${apiBase + note.image_path}" alt="Notice image" onerror="this.style.display='none'">`;
+        }
+        
+        return `
+          <div class="note-item">
+            <div class="note-header">
+              <span>Organizer Announcement</span>
+              <span class="note-time">${timeStr}</span>
+            </div>
+            <div class="note-text">${escapeHtml(note.note_text)}</div>
+            ${imgHtml}
+          </div>
+        `;
+      }).join('');
     })
-    .catch((err) => {
-      container.innerHTML = `<p style="color: var(--error);">${err.message}</p>`;
+    .catch(() => {
+      container.innerHTML = `<p style="color: var(--error); font-size:13px; text-align:center;">Failed to sync announcements.</p>`;
     });
 }
 
-// Escape HTML utility helper
+// UTILITY HELPERS
 function escapeHtml(str) {
   if (!str) return '';
   return str
@@ -575,4 +601,21 @@ function escapeHtml(str) {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
+}
+
+function showAlert(containerId, message, type = 'error') {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  
+  container.innerHTML = `
+    <div class="alert alert-${type}">
+      <span>${type === 'success' ? '✔' : '⚠'} ${message}</span>
+    </div>
+  `;
+  container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function clearAlert(containerId) {
+  const container = document.getElementById(containerId);
+  if (container) container.innerHTML = '';
 }
