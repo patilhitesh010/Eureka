@@ -25,9 +25,18 @@ if (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
 // 2. Initialize pg connection pool (for connect-pg-simple session store)
 let pool = null;
 if (process.env.DATABASE_URL) {
+  let connectionString = process.env.DATABASE_URL;
+  if (connectionString.includes('db.zwvfcruahdtgwerdarqx.supabase.co')) {
+    console.log('🔄 Auto-detecting direct IPv6 Supabase URL. Rewriting to IPv4 Transaction Pooler...');
+    connectionString = connectionString
+      .replace('://postgres:', '://postgres.zwvfcruahdtgwerdarqx:')
+      .replace('db.zwvfcruahdtgwerdarqx.supabase.co:5432', 'aws-0-ap-south-1.pooler.supabase.com:6543')
+      .replace('db.zwvfcruahdtgwerdarqx.supabase.co:6543', 'aws-0-ap-south-1.pooler.supabase.com:6543');
+  }
+
   pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: !process.env.DATABASE_URL.includes('localhost') ? { rejectUnauthorized: false } : false
+    connectionString: connectionString,
+    ssl: !connectionString.includes('localhost') ? { rejectUnauthorized: false } : false
   });
 }
 
