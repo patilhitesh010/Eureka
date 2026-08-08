@@ -220,9 +220,9 @@ app.get('/api/auth/me', (req, res) => {
 
 // Register Student
 app.post('/api/auth/register', async (req, res) => {
-  const { name, email, password } = req.body;
+  const { name, email, password, semester } = req.body;
 
-  if (!name || !email || !password) {
+  if (!name || !email || !password || !semester) {
     return res.status(400).json({ error: 'All fields are required' });
   }
 
@@ -243,8 +243,8 @@ app.post('/api/auth/register', async (req, res) => {
 
     const hash = await bcrypt.hash(password, 10);
     const result = await dbQuery.run(
-      'INSERT INTO users (name, email, password_hash, role) VALUES (?, ?, ?, ?)',
-      [name, email.toLowerCase(), hash, 'student']
+      'INSERT INTO users (name, email, password_hash, role, semester) VALUES (?, ?, ?, ?, ?)',
+      [name, email.toLowerCase(), hash, 'student', semester]
     );
 
     // Save session
@@ -253,7 +253,8 @@ app.post('/api/auth/register', async (req, res) => {
       name,
       email: email.toLowerCase(),
       role: 'student',
-      profile_pic: null
+      profile_pic: null,
+      semester
     };
 
     res.status(201).json({ message: 'Registration successful', user: req.session.user });
@@ -312,7 +313,7 @@ app.post('/api/auth/logout', (req, res) => {
 // PROFILE MANAGEMENT
 // ----------------------------------------------------
 app.put('/api/profile', requireAuth, uploadProfile.single('profile_pic'), async (req, res) => {
-  const { name, email, password } = req.body;
+  const { name, email, password, semester } = req.body;
   const userId = req.session.user.id;
 
   if (!name || !email) {
@@ -333,8 +334,8 @@ app.put('/api/profile', requireAuth, uploadProfile.single('profile_pic'), async 
       }
     }
 
-    let query = 'UPDATE users SET name = ?, email = ?';
-    let params = [name, email.toLowerCase()];
+    let query = 'UPDATE users SET name = ?, email = ?, semester = ?';
+    let params = [name, email.toLowerCase(), semester || user.semester];
 
     if (password && password.trim().length > 0) {
       if (password.length < 6) {
@@ -360,6 +361,7 @@ app.put('/api/profile', requireAuth, uploadProfile.single('profile_pic'), async 
     // Update Session
     req.session.user.name = name;
     req.session.user.email = email.toLowerCase();
+    req.session.user.semester = semester || user.semester;
 
     res.json({ message: 'Profile updated successfully', user: req.session.user });
   } catch (error) {
@@ -592,7 +594,7 @@ app.get('/api/student/notes', requireAuth, async (req, res) => {
 // List all students
 app.get('/api/admin/students', requireAdmin, async (req, res) => {
   try {
-    const students = await dbQuery.all('SELECT id, name, email, role, profile_pic, created_at FROM users WHERE role = ?', ['student']);
+    const students = await dbQuery.all('SELECT id, name, email, role, profile_pic, semester, created_at FROM users WHERE role = ?', ['student']);
     res.json({ students });
   } catch (error) {
     console.error('Admin Students Error:', error);
@@ -602,7 +604,7 @@ app.get('/api/admin/students', requireAdmin, async (req, res) => {
 
 // Edit student details
 app.put('/api/admin/students/:id', requireAdmin, async (req, res) => {
-  const { name, email, role } = req.body;
+  const { name, email, role, semester } = req.body;
   const studentId = req.params.id;
 
   if (!name || !email) {
@@ -621,8 +623,8 @@ app.put('/api/admin/students/:id', requireAdmin, async (req, res) => {
     }
 
     await dbQuery.run(
-      'UPDATE users SET name = ?, email = ?, role = ? WHERE id = ?',
-      [name, email.toLowerCase(), role || user.role, studentId]
+      'UPDATE users SET name = ?, email = ?, role = ?, semester = ? WHERE id = ?',
+      [name, email.toLowerCase(), role || user.role, semester || user.semester, studentId]
     );
 
     res.json({ message: 'Student updated successfully' });
@@ -787,6 +789,58 @@ app.delete('/api/admin/notes/:id', requireAdmin, async (req, res) => {
 });
 
 // ----------------------------------------------------
+// PITCH TIMETABLE ENDPOINTS
+// ----------------------------------------------------
+
+// Get all approved teams ordered by pitch order
+app.get('/api/timetable', requireAuth, async (req, res) => {
+  try {
+    const teams = await dbQuery.all(
+      'SELECT id, team_name, problem_type, problem_statement, leader_id, status, pitch_order, pitch_completed, pitch_time FROM teams WHERE status = ? ORDER BY pitch_order ASC',
+      ['approved']
+    );
+    res.json({ teams });
+  } catch (error) {
+    console.error('Fetch Timetable Error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Update timetable (Admin only)
+app.put('/api/admin/timetable', requireAdmin, async (req, res) => {
+  const { schedule } = req.body; // array of { teamId, pitch_order, pitch_time, pitch_completed }
+  if (!Array.isArray(schedule)) {
+    return res.status(400).json({ error: 'Schedule must be an array' });
+  }
+  try {
+    for (const item of schedule) {
+      await dbQuery.run(
+        'UPDATE teams SET pitch_order = ?, pitch_time = ?, pitch_completed = ? WHERE id = ?',
+        [item.pitch_order, item.pitch_time, item.pitch_completed, item.teamId]
+      );
+    }
+    res.json({ message: 'Timetable updated successfully' });
+  } catch (error) {
+    console.error('Update Timetable Error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get next pitch turn (Next pending team)
+app.get('/api/timetable/next-turn', requireAuth, async (req, res) => {
+  try {
+    const nextTeam = await dbQuery.get(
+      'SELECT id, team_name, problem_type, problem_statement, leader_id, status, pitch_order, pitch_completed, pitch_time FROM teams WHERE status = ? AND pitch_completed = ? ORDER BY pitch_order ASC LIMIT 1',
+      ['approved', false]
+    );
+    res.json({ nextTeam: nextTeam || null });
+  } catch (error) {
+    console.error('Fetch Next Turn Error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ----------------------------------------------------
 // COMPETITION CONFIGURATION ENDPOINTS
 // ----------------------------------------------------
 
@@ -832,8 +886,8 @@ app.put('/api/admin/competition/config', requireAdmin, async (req, res) => {
       return res.status(400).json({ error: 'Stages must be a JSON array' });
     }
     
-    await dbQuery.run('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', ['countdown_deadline', countdown_deadline]);
-    await dbQuery.run('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', ['stages', stagesStr]);
+    await dbQuery.run('INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value', ['countdown_deadline', countdown_deadline]);
+    await dbQuery.run('INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value', ['stages', stagesStr]);
     
     res.json({ message: 'Competition settings updated successfully' });
   } catch (error) {

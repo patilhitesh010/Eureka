@@ -68,6 +68,7 @@ if (registerForm) {
     
     const name = document.getElementById('name').value;
     const email = document.getElementById('email').value;
+    const semester = document.getElementById('semester').value;
     const password = document.getElementById('password').value;
     const confirmPassword = document.getElementById('confirm-password').value;
     
@@ -81,7 +82,7 @@ if (registerForm) {
     fetch(apiBase + '/api/auth/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email, password })
+      body: JSON.stringify({ name, email, password, semester })
     })
     .then(async (res) => {
       const data = await res.json();

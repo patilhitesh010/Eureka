@@ -1,49 +1,85 @@
-// Database client using SQLite3
+// Database client using PostgreSQL (configured for Supabase)
 // Manages tables, schemas, migrations, and default administrator seeding
+// Automatically translates SQLite SQL queries to PostgreSQL compatibility.
 
-const sqlite3 = require('sqlite3').verbose();
-const path = require('path');
+require('dotenv').config();
+const { Pool } = require('pg');
 const bcrypt = require('bcrypt');
 
-const dbPath = path.join(__dirname, 'database.db');
-const db = new sqlite3.Database(dbPath, (err) => {
-  if (err) {
-    console.error('Error connecting to the SQLite database:', err.message);
-  } else {
-    console.log('Connected to the SQLite database at:', dbPath);
+let pool;
+if (process.env.DATABASE_URL) {
+  pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: !process.env.DATABASE_URL.includes('localhost') ? { rejectUnauthorized: false } : false
+  });
+  console.log('PostgreSQL connection pool initialized.');
+} else {
+  console.warn('⚠️ WARNING: DATABASE_URL is not configured in .env! Database operations will fail.');
+}
+
+// Translate SQLite SQL syntax to PostgreSQL compatibility
+function convertSql(sql) {
+  if (typeof sql !== 'string') return sql;
+
+  let pgSql = sql;
+
+  // Convert SQLite DDL data types and definitions to Postgres compatibility
+  if (pgSql.toUpperCase().includes('CREATE TABLE')) {
+    pgSql = pgSql.replace(/INTEGER PRIMARY KEY AUTOINCREMENT/gi, 'SERIAL PRIMARY KEY');
+    pgSql = pgSql.replace(/DATETIME/gi, 'TIMESTAMP');
   }
-});
+
+  // Convert SQLite parameter placeholders (?) to Postgres placeholders ($1, $2, etc.)
+  let paramIndex = 1;
+  pgSql = pgSql.replace(/\?/g, () => `$${paramIndex++}`);
+
+  return pgSql;
+}
 
 // Promisified query wrappers for server-side async/await
 const dbQuery = {
-  run: (sql, params = []) => {
-    return new Promise((resolve, reject) => {
-      db.run(sql, params, function (err) {
-        if (err) reject(err);
-        else resolve({ lastID: this.lastID, changes: this.changes });
-      });
-    });
+  run: async (sql, params = []) => {
+    if (!pool) {
+      throw new Error('Database pool is not initialized. Configure DATABASE_URL in .env.');
+    }
+    const pgSql = convertSql(sql);
+
+    // If it's an INSERT statement, append "RETURNING *" to fetch the auto-generated primary key
+    if (pgSql.trim().toUpperCase().startsWith('INSERT ')) {
+      const res = await pool.query(pgSql + ' RETURNING *', params);
+      const insertedRow = res.rows[0];
+      const insertedId = insertedRow ? (insertedRow.id !== undefined ? insertedRow.id : insertedRow.key) : null;
+      return { id: insertedId, lastID: insertedId, changes: res.rowCount };
+    } else {
+      const res = await pool.query(pgSql, params);
+      return { changes: res.rowCount };
+    }
   },
-  get: (sql, params = []) => {
-    return new Promise((resolve, reject) => {
-      db.get(sql, params, (err, row) => {
-        if (err) reject(err);
-        else resolve(row);
-      });
-    });
+  get: async (sql, params = []) => {
+    if (!pool) {
+      throw new Error('Database pool is not initialized. Configure DATABASE_URL in .env.');
+    }
+    const pgSql = convertSql(sql);
+    const res = await pool.query(pgSql, params);
+    return res.rows[0] || null;
   },
-  all: (sql, params = []) => {
-    return new Promise((resolve, reject) => {
-      db.all(sql, params, (err, rows) => {
-        if (err) reject(err);
-        else resolve(rows);
-      });
-    });
+  all: async (sql, params = []) => {
+    if (!pool) {
+      throw new Error('Database pool is not initialized. Configure DATABASE_URL in .env.');
+    }
+    const pgSql = convertSql(sql);
+    const res = await pool.query(pgSql, params);
+    return res.rows;
   }
 };
 
 // Initialize schema tables
 async function initDb() {
+  if (!pool) {
+    console.warn('Skipping database schema initialization: pool is not configured.');
+    return;
+  }
+
   try {
     // 1. Users Table
     await dbQuery.run(`
@@ -54,6 +90,7 @@ async function initDb() {
         password_hash TEXT NOT NULL,
         role TEXT CHECK(role IN ('student', 'admin')) DEFAULT 'student',
         profile_pic TEXT DEFAULT '/uploads/profiles/default.png',
+        semester TEXT DEFAULT NULL,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
       )
     `);
@@ -69,6 +106,9 @@ async function initDb() {
         status TEXT CHECK(status IN ('pending', 'approved', 'rejected')) DEFAULT 'pending',
         ppt_path TEXT DEFAULT NULL,
         doc_path TEXT DEFAULT NULL,
+        pitch_order INTEGER DEFAULT 0,
+        pitch_completed BOOLEAN DEFAULT FALSE,
+        pitch_time TEXT DEFAULT NULL,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY(leader_id) REFERENCES users(id) ON DELETE CASCADE
       )
@@ -107,6 +147,12 @@ async function initDb() {
         value TEXT
       )
     `);
+
+    // Apply auto-migrations for existing tables
+    await dbQuery.run('ALTER TABLE users ADD COLUMN IF NOT EXISTS semester TEXT DEFAULT NULL');
+    await dbQuery.run('ALTER TABLE teams ADD COLUMN IF NOT EXISTS pitch_order INTEGER DEFAULT 0');
+    await dbQuery.run('ALTER TABLE teams ADD COLUMN IF NOT EXISTS pitch_completed BOOLEAN DEFAULT FALSE');
+    await dbQuery.run('ALTER TABLE teams ADD COLUMN IF NOT EXISTS pitch_time TEXT DEFAULT NULL');
 
     // Seed default settings
     const defaultDeadline = '2026-09-30T23:59:59';
@@ -170,7 +216,7 @@ async function initDb() {
       console.log('Seeded default timeline stages');
     }
 
-    console.log('Database tables verified/created successfully.');
+    console.log('Database tables verified/created successfully on PostgreSQL.');
 
     // Seed default admin account
     const adminEmail = process.env.ADMIN_EMAIL || 'admin@eureka.com';
@@ -193,6 +239,6 @@ async function initDb() {
 initDb();
 
 module.exports = {
-  db,
+  db: pool,
   dbQuery
 };

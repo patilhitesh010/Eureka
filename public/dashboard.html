@@ -39,6 +39,7 @@
         <ul class="nav-links">
           <li><span id="user-display-name" style="color: var(--primary); font-weight: 700; font-family: var(--font-mono); font-size: 13px;">Student</span></li>
           <li id="admin-nav-item" style="display: none;"><a href="admin.html" class="btn btn-primary btn-sm">Admin Panel</a></li>
+          <li><a href="timetable.html">Timetable</a></li>
           <li><a href="index.html">Home</a></li>
           <li><button id="logout-btn" class="btn btn-secondary btn-sm" style="cursor: pointer;">Logout</button></li>
         </ul>
@@ -55,6 +56,18 @@
           <p style="color: var(--text-muted); font-size: 13px;">You have administrator credentials. You can view all teams, edit statuses, and post bulletins.</p>
         </div>
         <a href="admin.html" class="btn btn-primary btn-sm" style="text-decoration: none;">Go to Admin Panel</a>
+      </div>
+    </div>
+
+    <!-- Live Pitching - Next Turn Banner -->
+    <div id="next-turn-card" class="card" style="display: none; border-color: var(--accent); background: rgba(6, 182, 212, 0.04); margin: 25px auto 0; padding: 20px 30px; box-shadow: var(--glow-accent);">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+        <div>
+          <span style="font-size: 10px; font-family: var(--font-mono); color: var(--accent); text-transform: uppercase; font-weight: 800; letter-spacing: 2px;">⚡ LIVE TIMETABLE UPDATES</span>
+          <h3 style="color: var(--white); font-family: var(--font-display); margin: 5px 0 3px;">🎯 Next Team Pitching: <span id="next-team-name" style="color: var(--accent);">Loading...</span></h3>
+          <p style="color: var(--text-muted); font-size: 13px;">Scheduled Slot: <strong id="next-team-slot" style="color: var(--white);">N/A</strong> | Problem Statement: <span id="next-team-statement">N/A</span></p>
+        </div>
+        <a href="timetable.html" class="btn btn-accent btn-sm" style="text-decoration: none; box-shadow: 0 0 10px rgba(6,182,212,0.25);">View Live Timetable</a>
       </div>
     </div>
 
@@ -95,6 +108,20 @@
             <div class="form-group">
               <label for="profile-email">Email Address</label>
               <input type="email" id="profile-email" name="email" class="form-control" required autocomplete="email">
+            </div>
+            
+            <div class="form-group">
+              <label for="profile-semester">Current Semester</label>
+              <select id="profile-semester" name="semester" class="form-control" required>
+                <option value="Semester 1">Semester 1</option>
+                <option value="Semester 2">Semester 2</option>
+                <option value="Semester 3">Semester 3</option>
+                <option value="Semester 4">Semester 4</option>
+                <option value="Semester 5">Semester 5</option>
+                <option value="Semester 6">Semester 6</option>
+                <option value="Semester 7">Semester 7</option>
+                <option value="Semester 8">Semester 8</option>
+              </select>
             </div>
             
             <div class="form-group">
