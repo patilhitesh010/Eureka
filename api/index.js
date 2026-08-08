@@ -191,6 +191,15 @@ function requireAuth(req, res, next) {
   next();
 }
 
+function formatDbError(error) {
+  if (!error) return 'Unknown database error';
+  let msg = error.message || 'Database error';
+  if (msg.toLowerCase().includes('relation') && msg.toLowerCase().includes('does not exist')) {
+    msg += ' (Database table not found. Please execute the SQL schema script inside your Supabase SQL Editor.)';
+  }
+  return msg;
+}
+
 function requireAdmin(req, res, next) {
   if (!req.session.user || req.session.user.role !== 'admin') {
     return res.status(403).json({ error: 'Access denied. Administrators only.' });
@@ -275,7 +284,7 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
     res.status(201).json({ message: 'Registration successful', user: req.session.user });
   } catch (error) {
     console.error('Registration Error:', error);
-    res.status(500).json({ error: 'Internal server error', details: error.message });
+    res.status(500).json({ error: 'Internal server error', details: formatDbError(error) });
   }
 });
 
@@ -315,7 +324,7 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
     res.json({ message: 'Login successful', user: req.session.user });
   } catch (error) {
     console.error('Login Error:', error);
-    res.status(500).json({ error: 'Internal server error', details: error.message });
+    res.status(500).json({ error: 'Internal server error', details: formatDbError(error) });
   }
 });
 
@@ -1078,6 +1087,55 @@ app.get('/api/timetable/next-turn', requireAuth, async (req, res) => {
 
 // Get active configuration (deadline and stages)
 app.get('/api/competition/config', async (req, res) => {
+  const defaultDeadline = '2026-09-30T23:59:59';
+  const defaultStages = [
+    {
+      id: 1,
+      title: "Stage 1: Registration & Roster Setup",
+      date: "Aug 15 – Sept 30, 2026",
+      status: "Active",
+      description: "Form a team of 1 to 5 members (Degree or Diploma streams) and sign up. Roster names, emails, and credentials can be updated dynamically via the dashboard.",
+      deliverable: "Online Team Roster Registration",
+      icon: "dollar"
+    },
+    {
+      id: 2,
+      title: "Stage 2: Challenge Lock",
+      date: "Oct 1 – Oct 25, 2026",
+      status: "Upcoming",
+      description: "Explore all 40 Predefined Problem Statements or set up your custom innovation proposal, and lock your primary track in the student dashboard.",
+      deliverable: "Locked Problem Statement Choice",
+      icon: "clock"
+    },
+    {
+      id: 3,
+      title: "Stage 3: Executive Pitch Deck Submission",
+      date: "Nov 1 – Nov 20, 2026",
+      status: "Upcoming",
+      description: "Once approved, download the official presentation template. Upload your finalized pitch deck (.pptx or .pdf format) directly onto the portal.",
+      deliverable: "Standardized Pitch Deck (.pptx)",
+      icon: "shield"
+    },
+    {
+      id: 4,
+      title: "Stage 4: Expert Mentorship & Review",
+      date: "Dec 5 – Dec 15, 2026",
+      status: "Upcoming",
+      description: "Shortlisted teams undergo intensive evaluations and receive 1-on-1 industry mentorship to refine financial projections, market fit, and technical prototypes.",
+      deliverable: "Refined Prototype & Business Model",
+      icon: "users"
+    },
+    {
+      id: 5,
+      title: "Stage 5: Live Pitch Arena",
+      date: "January 2026 (Live Stage)",
+      status: "Final",
+      description: "Present your startup business model live on stage at the SIT Tech Fest 2026. Pitch for 7-8 minutes followed by Q&A with real venture capitalists, angel investors, and judges.",
+      deliverable: "Live Pitch & Prize Ceremony",
+      icon: "star"
+    }
+  ];
+
   try {
     const { data: deadlineRow, error: dlErr } = await supabase
       .from('settings')
@@ -1095,12 +1153,15 @@ app.get('/api/competition/config', async (req, res) => {
     if (stErr) throw stErr;
 
     res.json({
-      countdown_deadline: deadlineRow ? deadlineRow.value : '2026-09-30T23:59:59',
-      stages: stagesRow ? JSON.parse(stagesRow.value) : []
+      countdown_deadline: deadlineRow ? deadlineRow.value : defaultDeadline,
+      stages: stagesRow ? JSON.parse(stagesRow.value) : defaultStages
     });
   } catch (error) {
-    console.error('Fetch Config Error:', error);
-    res.status(500).json({ error: 'Internal server error', details: error.message });
+    console.warn('Database config settings missing/failed, returning defaults:', error.message);
+    res.json({
+      countdown_deadline: defaultDeadline,
+      stages: defaultStages
+    });
   }
 });
 
@@ -1144,7 +1205,7 @@ app.put('/api/admin/competition/config', requireAdmin, async (req, res) => {
     res.json({ message: 'Competition settings updated successfully' });
   } catch (error) {
     console.error('Update Config Error:', error);
-    res.status(500).json({ error: 'Internal server error or invalid stages format', details: error.message });
+    res.status(500).json({ error: 'Internal server error or invalid stages format', details: formatDbError(error) });
   }
 });
 
