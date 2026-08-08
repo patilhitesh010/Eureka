@@ -7,7 +7,7 @@ const path = require('path');
 const fs = require('fs');
 require('dotenv').config();
 
-const { dbQuery } = require('./db');
+const { dbQuery } = require('../db');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -18,7 +18,9 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 // Ensure uploads directories exist
-const uploadsDir = path.join(__dirname, 'public', 'uploads');
+const uploadsDir = process.env.VERCEL
+  ? '/tmp'
+  : path.join(process.cwd(), 'public', 'uploads');
 const profilesDir = path.join(uploadsDir, 'profiles');
 const notesDir = path.join(uploadsDir, 'notes');
 
@@ -897,6 +899,10 @@ app.put('/api/admin/competition/config', requireAdmin, async (req, res) => {
 });
 
 // Start Express Server
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server is running on port ${PORT}`);
-});
+if (!process.env.VERCEL) {
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Server is running on port ${PORT}`);
+  });
+}
+
+module.exports = app;

@@ -113,12 +113,14 @@ body {
 
 @keyframes bgLogoBlink {
   0% {
-    opacity: 0.02;
-    transform: scale(0.96) rotate(-2deg);
+    opacity: 0.03;
+    transform: scale(0.95) rotate(-3deg);
+    filter: blur(1px);
   }
   100% {
-    opacity: 0.08;
-    transform: scale(1.04) rotate(2deg);
+    opacity: 0.12;
+    transform: scale(1.05) rotate(3deg);
+    filter: blur(0px);
   }
 }
 
@@ -1243,4 +1245,63 @@ body::after {
   background: radial-gradient(circle, rgba(6, 182, 212, 0.15) 0%, transparent 70%);
   z-index: -1;
   pointer-events: none;
+}
+
+/* Mobile Responsive Overrides & Optimizations */
+@media (max-width: 768px) {
+  .navbar {
+    flex-direction: column;
+    gap: 12px;
+    padding: 12px 0;
+  }
+  .nav-links {
+    gap: 6px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .nav-links a, .nav-links button.nav-btn, .nav-links button.btn {
+    padding: 6px 12px;
+    font-size: 11px;
+  }
+  #logo-canvas-container {
+    height: 320px;
+  }
+  .hero {
+    padding: 30px 0;
+  }
+  .hero-grid {
+    gap: 20px;
+  }
+  .dashboard-grid {
+    padding: 20px 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero h1 {
+    font-size: 32px;
+    line-height: 1.2;
+  }
+  .hero p {
+    font-size: 14px;
+  }
+  .countdown-clock {
+    gap: 8px;
+    padding: 16px;
+  }
+  .countdown-segment {
+    min-width: 50px;
+  }
+  .countdown-val {
+    font-size: 24px;
+  }
+  .countdown-lbl {
+    font-size: 9px;
+  }
+  .countdown-divider {
+    font-size: 20px;
+  }
+  .card {
+    padding: 20px;
+  }
 }
