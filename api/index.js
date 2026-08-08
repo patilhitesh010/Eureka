@@ -262,7 +262,7 @@ app.post('/api/auth/register', async (req, res) => {
     res.status(201).json({ message: 'Registration successful', user: req.session.user });
   } catch (error) {
     console.error('Registration Error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Internal server error', details: error.message });
   }
 });
 
@@ -296,7 +296,7 @@ app.post('/api/auth/login', async (req, res) => {
     res.json({ message: 'Login successful', user: req.session.user });
   } catch (error) {
     console.error('Login Error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Internal server error', details: error.message });
   }
 });
 
