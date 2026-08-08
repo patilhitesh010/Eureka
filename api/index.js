@@ -48,6 +48,17 @@ app.use(session({
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// Check database configuration availability
+app.use('/api', (req, res, next) => {
+  if (!supabase) {
+    return res.status(500).json({
+      error: 'Database configuration missing',
+      details: 'SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY environment variables are not configured in Vercel settings.'
+    });
+  }
+  next();
+});
+
 // Serve static assets from public folder
 app.use(express.static(path.join(process.cwd(), 'public')));
 
