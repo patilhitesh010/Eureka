@@ -5,34 +5,24 @@ const bcrypt = require('bcryptjs');
 const multer = require('multer');
 const nodemailer = require('nodemailer');
 const path = require('path');
-const fs = require('fs');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
-const { dbQuery, db } = require('../db');
+const { supabase, db } = require('../db');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Trust Render's reverse proxy so req.protocol reports 'https' correctly
-if (process.env.NODE_ENV === 'production') {
-  app.set('trust proxy', 1);
-}
+// Trust reverse proxies (needed for Vercel and secure cookies)
+app.set('trust proxy', 1);
 
-// Ensure uploads directories exist
-const uploadsDir = process.env.VERCEL
-  ? '/tmp'
-  : path.join(process.cwd(), 'public', 'uploads');
-const profilesDir = path.join(uploadsDir, 'profiles');
-const notesDir = path.join(uploadsDir, 'notes');
+// Use Helmet for secure HTTP headers, disabling rigid CSP to allow inline assets
+app.use(helmet({
+  contentSecurityPolicy: false
+}));
 
-if (!fs.existsSync(profilesDir)) {
-  fs.mkdirSync(profilesDir, { recursive: true });
-}
-if (!fs.existsSync(notesDir)) {
-  fs.mkdirSync(notesDir, { recursive: true });
-}
-
-// Session Middleware
+// Configure session store
 let sessionStore;
 if (db) {
   sessionStore = new PgSession({
@@ -49,95 +39,45 @@ app.use(session({
   saveUninitialized: false,
   cookie: {
     maxAge: 1000 * 60 * 60 * 24, // 24 hours
-    secure: process.env.NODE_ENV === 'production', // HTTPS-only in production
+    secure: process.env.NODE_ENV === 'production', // HTTPS in production
     sameSite: process.env.NODE_ENV === 'production' ? 'lax' : false
   }
 }));
 
-// Body Parsers
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Body Parsers with limits
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Serve Static Files
+// Serve static assets from public folder
 app.use(express.static(path.join(process.cwd(), 'public')));
 
-// Configure Multer Disk Storage for Profile Pictures
-const profileStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, profilesDir);
-  },
-  filename: (req, file, cb) => {
-    const userId = req.session.user ? req.session.user.id : 'temp';
-    const ext = path.extname(file.originalname);
-    cb(null, `profile-${userId}-${Date.now()}${ext}`);
-  }
-});
+// Configure Multer Memory Storage (strictly serverless-compatible)
 const uploadProfile = multer({
-  storage: profileStorage,
-  limits: { fileSize: 2 * 1024 * 1024 }, // 2MB limit
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 2 * 1024 * 1024 }, // 2MB
   fileFilter: (req, file, cb) => {
     const filetypes = /jpeg|jpg|png|gif|webp/;
     const mimetype = filetypes.test(file.mimetype);
     const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
-    if (mimetype && extname) {
-      return cb(null, true);
-    }
+    if (mimetype && extname) return cb(null, true);
     cb(new Error('Only images (jpg, jpeg, png, gif, webp) are allowed!'));
   }
 });
 
-// Configure Multer Storage for Admin Dashboard Notes/Images
-const noteStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, notesDir);
-  },
-  filename: (req, file, cb) => {
-    const studentId = req.params.id || 'all';
-    const ext = path.extname(file.originalname);
-    cb(null, `note-${studentId}-${Date.now()}${ext}`);
-  }
-});
 const uploadNoteImage = multer({
-  storage: noteStorage,
-  limits: { fileSize: 3 * 1024 * 1024 }, // 3MB limit
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 3 * 1024 * 1024 }, // 3MB
   fileFilter: (req, file, cb) => {
     const filetypes = /jpeg|jpg|png|gif|webp/;
     const mimetype = filetypes.test(file.mimetype);
     const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
-    if (mimetype && extname) {
-      return cb(null, true);
-    }
+    if (mimetype && extname) return cb(null, true);
     cb(new Error('Only images are allowed!'));
   }
 });
 
-// Ensure presentation & document directories exist
-const presentationsDir = path.join(uploadsDir, 'presentations');
-const docsDir = path.join(uploadsDir, 'documents');
-if (!fs.existsSync(presentationsDir)) {
-  fs.mkdirSync(presentationsDir, { recursive: true });
-}
-if (!fs.existsSync(docsDir)) {
-  fs.mkdirSync(docsDir, { recursive: true });
-}
-
-// Multer storage for team files (presentation/document)
-const teamStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    if (file.fieldname === 'presentation') cb(null, presentationsDir);
-    else if (file.fieldname === 'document') cb(null, docsDir);
-    else cb(null, uploadsDir);
-  },
-  filename: (req, file, cb) => {
-    const leaderId = req.session && req.session.user ? req.session.user.id : 'anon';
-    const ext = path.extname(file.originalname);
-    const safeField = file.fieldname.replace(/[^a-z0-9_-]/gi, '_');
-    cb(null, `${safeField}-${leaderId}-${Date.now()}${ext}`);
-  }
-});
-
 const uploadTeamFiles = multer({
-  storage: teamStorage,
+  storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB per file
   fileFilter: (req, file, cb) => {
     const allowed = /pdf|ppt|pptx|doc|docx/;
@@ -147,21 +87,48 @@ const uploadTeamFiles = multer({
   }
 });
 
+// Helper: Upload memory buffer to Supabase Storage Bucket
+async function uploadToSupabase(buffer, bucket, storagePath, mimeType) {
+  const { data, error } = await supabase.storage
+    .from(bucket)
+    .upload(storagePath, buffer, {
+      contentType: mimeType,
+      upsert: true
+    });
+
+  if (error) {
+    throw new Error(`Supabase Storage upload failed: ${error.message}`);
+  }
+
+  const { data: { publicUrl } } = supabase.storage
+    .from(bucket)
+    .getPublicUrl(storagePath);
+
+  return publicUrl;
+}
+
+// Rate Limiter for authentication routes
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 mins
+  max: 100, // Limit to 100 attempts per window
+  message: { error: 'Too many authentication attempts, please try again later.' }
+});
+
 // Configure Nodemailer for Brevo SMTP
 const transporter = nodemailer.createTransport({
-  host: process.env.BREVO_SMTP_HOST || 'smtp-relay.brevo.com',
-  port: parseInt(process.env.BREVO_SMTP_PORT) || 587,
+  host: process.env.SMTP_HOST || 'smtp-relay.brevo.com',
+  port: parseInt(process.env.SMTP_PORT) || 587,
   auth: {
-    user: process.env.BREVO_SMTP_USER,
-    pass: process.env.BREVO_SMTP_PASSWORD
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS
   }
 });
 
-// Email dispatch helper with Console fallback
+// Email dispatch helper with console fallback
 async function sendRegistrationEmail(leaderEmail, leaderName, teamName, problemStatement, members) {
   const memberRows = members.map(m => `<li>${m.name} (${m.email})</li>`).join('');
   const mailOptions = {
-    from: process.env.BREVO_SMTP_FROM || '"Eureka Competition" <no-reply@eureka.com>',
+    from: process.env.FROM_EMAIL || '"Eureka Competition" <no-reply@eureka.com>',
     to: leaderEmail,
     subject: `🚀 Startup Registration Confirmed: ${teamName}`,
     html: `
@@ -188,11 +155,14 @@ async function sendRegistrationEmail(leaderEmail, leaderName, teamName, problemS
   };
 
   try {
+    if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+      throw new Error('SMTP credentials not configured');
+    }
     await transporter.sendMail(mailOptions);
     console.log(`Confirmation email sent successfully to leader: ${leaderEmail}`);
     return true;
   } catch (err) {
-    console.log('--- NODEMAILER LOG FALLBACK (Brevo SMTP config might be incomplete/incorrect) ---');
+    console.log('--- NODEMAILER LOG FALLBACK (SMTP not configured) ---');
     console.log(`To: ${leaderEmail}`);
     console.log(`Subject: ${mailOptions.subject}`);
     console.log(`Body HTML Summary:`);
@@ -240,14 +210,13 @@ app.get('/api/auth/register', (req, res) => {
 });
 
 // Register Student
-app.post('/api/auth/register', async (req, res) => {
+app.post('/api/auth/register', authLimiter, async (req, res) => {
   const { name, email, password, semester } = req.body;
 
   if (!name || !email || !password || !semester) {
     return res.status(400).json({ error: 'All fields are required' });
   }
 
-  // Basic validation
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(email)) {
     return res.status(400).json({ error: 'Invalid email address' });
@@ -257,20 +226,35 @@ app.post('/api/auth/register', async (req, res) => {
   }
 
   try {
-    const existingUser = await dbQuery.get('SELECT * FROM users WHERE email = ?', [email.toLowerCase()]);
+    const { data: existingUser, error: checkErr } = await supabase
+      .from('users')
+      .select('*')
+      .eq('email', email.toLowerCase())
+      .maybeSingle();
+
+    if (checkErr) throw checkErr;
     if (existingUser) {
       return res.status(400).json({ error: 'Email already registered' });
     }
 
     const hash = await bcrypt.hash(password, 10);
-    const result = await dbQuery.run(
-      'INSERT INTO users (name, email, password_hash, role, semester) VALUES (?, ?, ?, ?, ?)',
-      [name, email.toLowerCase(), hash, 'student', semester]
-    );
+    const { data: newUser, error: insertErr } = await supabase
+      .from('users')
+      .insert({
+        name,
+        email: email.toLowerCase(),
+        password_hash: hash,
+        role: 'student',
+        semester
+      })
+      .select()
+      .single();
+
+    if (insertErr) throw insertErr;
 
     // Save session
     req.session.user = {
-      id: result.id,
+      id: newUser.id,
       name,
       email: email.toLowerCase(),
       role: 'student',
@@ -286,7 +270,7 @@ app.post('/api/auth/register', async (req, res) => {
 });
 
 // Login
-app.post('/api/auth/login', async (req, res) => {
+app.post('/api/auth/login', authLimiter, async (req, res) => {
   const { email, password } = req.body;
 
   if (!email || !password) {
@@ -294,7 +278,13 @@ app.post('/api/auth/login', async (req, res) => {
   }
 
   try {
-    const user = await dbQuery.get('SELECT * FROM users WHERE email = ?', [email.toLowerCase()]);
+    const { data: user, error: loginErr } = await supabase
+      .from('users')
+      .select('*')
+      .eq('email', email.toLowerCase())
+      .maybeSingle();
+
+    if (loginErr) throw loginErr;
     if (!user) {
       return res.status(400).json({ error: 'Invalid email or password' });
     }
@@ -342,44 +332,60 @@ app.put('/api/profile', requireAuth, uploadProfile.single('profile_pic'), async 
   }
 
   try {
-    const user = await dbQuery.get('SELECT * FROM users WHERE id = ?', [userId]);
-    if (!user) {
+    const { data: user, error: getErr } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', userId)
+      .maybeSingle();
+
+    if (getErr || !user) {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    // Check if email is being updated and if it belongs to someone else
     if (email.toLowerCase() !== user.email) {
-      const emailTaken = await dbQuery.get('SELECT * FROM users WHERE email = ? AND id != ?', [email.toLowerCase(), userId]);
+      const { data: emailTaken, error: conflictErr } = await supabase
+        .from('users')
+        .select('*')
+        .eq('email', email.toLowerCase())
+        .neq('id', userId)
+        .maybeSingle();
+
+      if (conflictErr) throw conflictErr;
       if (emailTaken) {
         return res.status(400).json({ error: 'Email is already in use by another user' });
       }
     }
 
-    let query = 'UPDATE users SET name = ?, email = ?, semester = ?';
-    let params = [name, email.toLowerCase(), semester || user.semester];
+    const updateData = {
+      name,
+      email: email.toLowerCase(),
+      semester: semester || user.semester
+    };
 
     if (password && password.trim().length > 0) {
       if (password.length < 6) {
         return res.status(400).json({ error: 'Password must be at least 6 characters' });
       }
-      const hash = await bcrypt.hash(password, 10);
-      query += ', password_hash = ?';
-      params.push(hash);
+      updateData.password_hash = await bcrypt.hash(password, 10);
     }
 
     if (req.file) {
-      const profilePicUrl = `/uploads/profiles/${req.file.filename}`;
-      query += ', profile_pic = ?';
-      params.push(profilePicUrl);
+      const ext = path.extname(req.file.originalname).toLowerCase();
+      const storagePath = `profiles/profile-${userId}-${Date.now()}${ext}`;
+      const profilePicUrl = await uploadToSupabase(req.file.buffer, 'uploads', storagePath, req.file.mimetype);
+      
+      updateData.profile_pic = profilePicUrl;
       req.session.user.profile_pic = profilePicUrl;
     }
 
-    query += ' WHERE id = ?';
-    params.push(userId);
+    const { error: updateErr } = await supabase
+      .from('users')
+      .update(updateData)
+      .eq('id', userId);
 
-    await dbQuery.run(query, params);
+    if (updateErr) throw updateErr;
 
-    // Update Session
+    // Sync Session
     req.session.user.name = name;
     req.session.user.email = email.toLowerCase();
     req.session.user.semester = semester || user.semester;
@@ -387,7 +393,7 @@ app.put('/api/profile', requireAuth, uploadProfile.single('profile_pic'), async 
     res.json({ message: 'Profile updated successfully', user: req.session.user });
   } catch (error) {
     console.error('Profile Update Error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Internal server error', details: error.message });
   }
 });
 
@@ -395,22 +401,49 @@ app.put('/api/profile', requireAuth, uploadProfile.single('profile_pic'), async 
 // TEAM REGISTRATION
 // ----------------------------------------------------
 
-// Get Student's Registered Team
 app.get('/api/team/my-team', requireAuth, async (req, res) => {
   const userId = req.session.user.id;
 
   try {
-    // A student can be either the team leader or a team member.
-    // Let's first search if they are a leader:
-    let team = await dbQuery.get('SELECT * FROM teams WHERE leader_id = ?', [userId]);
+    let team = null;
     let roleInTeam = 'leader';
 
-    // If not leader, search if they are registered as a member by email:
-    if (!team) {
-      const user = await dbQuery.get('SELECT email FROM users WHERE id = ?', [userId]);
-      const memberRecord = await dbQuery.get('SELECT team_id FROM team_members WHERE email = ?', [user.email]);
+    const { data: leaderTeam, error: lTeamErr } = await supabase
+      .from('teams')
+      .select('*')
+      .eq('leader_id', userId)
+      .maybeSingle();
+
+    if (lTeamErr) throw lTeamErr;
+
+    if (leaderTeam) {
+      team = leaderTeam;
+    } else {
+      const { data: user, error: uErr } = await supabase
+        .from('users')
+        .select('email')
+        .eq('id', userId)
+        .single();
+
+      if (uErr) throw uErr;
+
+      const { data: memberRecord, error: memErr } = await supabase
+        .from('team_members')
+        .select('team_id')
+        .eq('email', user.email)
+        .maybeSingle();
+
+      if (memErr) throw memErr;
+
       if (memberRecord) {
-        team = await dbQuery.get('SELECT * FROM teams WHERE id = ?', [memberRecord.team_id]);
+        const { data: mTeam, error: mtErr } = await supabase
+          .from('teams')
+          .select('*')
+          .eq('id', memberRecord.team_id)
+          .maybeSingle();
+
+        if (mtErr) throw mtErr;
+        team = mTeam;
         roleInTeam = 'member';
       }
     }
@@ -419,11 +452,20 @@ app.get('/api/team/my-team', requireAuth, async (req, res) => {
       return res.json({ team: null });
     }
 
-    // Get members (include roll numbers and phone numbers)
-    const members = await dbQuery.all('SELECT name, email, roll_no, phone_no FROM team_members WHERE team_id = ?', [team.id]);
-    
-    // Get leader details
-    const leader = await dbQuery.get('SELECT name, email FROM users WHERE id = ?', [team.leader_id]);
+    const { data: members, error: memsErr } = await supabase
+      .from('team_members')
+      .select('name, email, roll_no, phone_no')
+      .eq('team_id', team.id);
+
+    if (memsErr) throw memsErr;
+
+    const { data: leader, error: leaderErr } = await supabase
+      .from('users')
+      .select('name, email')
+      .eq('id', team.leader_id)
+      .single();
+
+    if (leaderErr) throw leaderErr;
 
     res.json({
       team: {
@@ -442,17 +484,15 @@ app.get('/api/team/my-team', requireAuth, async (req, res) => {
     });
   } catch (error) {
     console.error('Fetch Team Error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Internal server error', details: error.message });
   }
 });
 
-// Register Team (no file uploads — files are submitted post-approval)
-app.post('/api/team/register', requireAuth, express.json(), async (req, res) => {
+app.post('/api/team/register', requireAuth, async (req, res) => {
   const { team_name, problem_type, problem_statement } = req.body;
   const membersRaw = req.body.members;
   const leaderId = req.session.user.id;
 
-  // Validation
   if (!team_name || !problem_type || !problem_statement || !membersRaw) {
     return res.status(400).json({ error: 'All team details are required' });
   }
@@ -468,7 +508,6 @@ app.post('/api/team/register', requireAuth, express.json(), async (req, res) => 
     return res.status(400).json({ error: 'Team must have between 1 and 5 members' });
   }
 
-  // Validate each member: email, roll_no, phone_no are all required
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   for (const m of parsedMembers) {
     if (!m.name || !m.email) {
@@ -487,66 +526,113 @@ app.post('/api/team/register', requireAuth, express.json(), async (req, res) => 
 
   try {
     // 1. Verify if leader already registered a team
-    const leaderHasTeam = await dbQuery.get('SELECT * FROM teams WHERE leader_id = ?', [leaderId]);
+    const { data: leaderHasTeam, error: ltErr } = await supabase
+      .from('teams')
+      .select('*')
+      .eq('leader_id', leaderId)
+      .maybeSingle();
+
+    if (ltErr) throw ltErr;
     if (leaderHasTeam) {
       return res.status(400).json({ error: 'You have already registered a team as a leader.' });
     }
 
     // 2. Verify if team name is unique
-    const teamExists = await dbQuery.get('SELECT * FROM teams WHERE team_name = ?', [team_name]);
+    const { data: teamExists, error: teErr } = await supabase
+      .from('teams')
+      .select('*')
+      .eq('team_name', team_name)
+      .maybeSingle();
+
+    if (teErr) throw teErr;
     if (teamExists) {
       return res.status(400).json({ error: 'Team name is already registered.' });
     }
 
     // 3. Verify if leader or any member is already registered in another team
-    const leaderUser = await dbQuery.get('SELECT email FROM users WHERE id = ?', [leaderId]);
-    
-    // Check if leader email is listed as a member in any team
-    const leaderIsMember = await dbQuery.get('SELECT * FROM team_members WHERE email = ?', [leaderUser.email]);
+    const { data: leaderUser, error: luErr } = await supabase
+      .from('users')
+      .select('email')
+      .eq('id', leaderId)
+      .single();
+
+    if (luErr) throw luErr;
+
+    const { data: leaderIsMember, error: limErr } = await supabase
+      .from('team_members')
+      .select('*')
+      .eq('email', leaderUser.email)
+      .maybeSingle();
+
+    if (limErr) throw limErr;
     if (leaderIsMember) {
       return res.status(400).json({ error: 'You are already registered as a member in another team.' });
     }
 
-    // Check each proposed member
+    // Check proposed members
     for (const m of parsedMembers) {
       // Check if member is a team leader
-      const memberIsLeader = await dbQuery.get('SELECT * FROM users u JOIN teams t ON u.id = t.leader_id WHERE u.email = ?', [m.email.toLowerCase()]);
+      const { data: memberIsLeader, error: milErr } = await supabase
+        .from('teams')
+        .select('*, leader:users!inner(email)')
+        .eq('leader.email', m.email.toLowerCase())
+        .maybeSingle();
+
+      if (milErr) throw milErr;
       if (memberIsLeader) {
         return res.status(400).json({ error: `Member ${m.name} (${m.email}) is already a leader of another team.` });
       }
-      
+
       // Check if member is in another team
-      const memberIsMember = await dbQuery.get('SELECT * FROM team_members WHERE email = ?', [m.email.toLowerCase()]);
+      const { data: memberIsMember, error: mimErr } = await supabase
+        .from('team_members')
+        .select('*')
+        .eq('email', m.email.toLowerCase())
+        .maybeSingle();
+
+      if (mimErr) throw mimErr;
       if (memberIsMember) {
         return res.status(400).json({ error: `Member ${m.name} (${m.email}) is already registered in another team.` });
       }
     }
 
-    // 4. Save to Database (no file paths at registration — files come after approval)
-    const teamResult = await dbQuery.run(
-      'INSERT INTO teams (team_name, leader_id, problem_type, problem_statement, status) VALUES (?, ?, ?, ?, ?)',
-      [team_name, leaderId, problem_type, problem_statement, 'pending']
-    );
+    // 4. Save Team
+    const { data: newTeam, error: newTeamErr } = await supabase
+      .from('teams')
+      .insert({
+        team_name,
+        leader_id: leaderId,
+        problem_type,
+        problem_statement,
+        status: 'pending'
+      })
+      .select()
+      .single();
 
-    const teamId = teamResult.id;
+    if (newTeamErr) throw newTeamErr;
 
-    // Add members (roll_no and phone_no are required)
-    for (const m of parsedMembers) {
-      await dbQuery.run(
-        'INSERT INTO team_members (team_id, name, email, roll_no, phone_no) VALUES (?, ?, ?, ?, ?)',
-        [teamId, m.name, m.email.toLowerCase(), m.roll_no.trim(), m.phone_no.trim()]
-      );
-    }
+    // Add members
+    const membersData = parsedMembers.map(m => ({
+      team_id: newTeam.id,
+      name: m.name,
+      email: m.email.toLowerCase(),
+      roll_no: m.roll_no.trim(),
+      phone_no: m.phone_no.trim()
+    }));
 
-    // No file uploads at registration time — files are submitted post-approval
+    const { error: memInsertErr } = await supabase
+      .from('team_members')
+      .insert(membersData);
 
-    // Send confirmation email asynchronously (do not block client response)
+    if (memInsertErr) throw memInsertErr;
+
+    // Send confirmation email (does not block client response)
     sendRegistrationEmail(leaderUser.email, req.session.user.name, team_name, problem_statement, parsedMembers);
 
     res.status(201).json({ message: 'Team registered successfully' });
   } catch (error) {
     console.error('Team Registration Error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Internal server error', details: error.message });
   }
 });
 
@@ -558,9 +644,13 @@ app.post('/api/team/upload-files', requireAuth, uploadTeamFiles.fields([
   const leaderId = req.session.user.id;
 
   try {
-    const team = await dbQuery.get('SELECT * FROM teams WHERE leader_id = ?', [leaderId]);
+    const { data: team, error: teamErr } = await supabase
+      .from('teams')
+      .select('*')
+      .eq('leader_id', leaderId)
+      .maybeSingle();
 
-    if (!team) {
+    if (teamErr || !team) {
       return res.status(404).json({ error: 'No team found for this leader.' });
     }
 
@@ -573,22 +663,34 @@ app.post('/api/team/upload-files', requireAuth, uploadTeamFiles.fields([
     let docPath = team.doc_path;
 
     if (files.presentation && files.presentation[0]) {
-      pptPath = `/uploads/presentations/${files.presentation[0].filename}`;
+      const file = files.presentation[0];
+      const ext = path.extname(file.originalname).toLowerCase();
+      const storagePath = `presentations/presentation-${leaderId}-${Date.now()}${ext}`;
+      pptPath = await uploadToSupabase(file.buffer, 'uploads', storagePath, file.mimetype);
     }
+
     if (files.document && files.document[0]) {
-      docPath = `/uploads/documents/${files.document[0].filename}`;
+      const file = files.document[0];
+      const ext = path.extname(file.originalname).toLowerCase();
+      const storagePath = `documents/document-${leaderId}-${Date.now()}${ext}`;
+      docPath = await uploadToSupabase(file.buffer, 'uploads', storagePath, file.mimetype);
     }
 
     if (!files.presentation && !files.document) {
       return res.status(400).json({ error: 'Please select at least one file to upload.' });
     }
 
-    await dbQuery.run('UPDATE teams SET ppt_path = ?, doc_path = ? WHERE id = ?', [pptPath, docPath, team.id]);
+    const { error: updateErr } = await supabase
+      .from('teams')
+      .update({ ppt_path: pptPath, doc_path: docPath })
+      .eq('id', team.id);
+
+    if (updateErr) throw updateErr;
 
     res.json({ message: 'Files uploaded successfully.', ppt_path: pptPath, doc_path: docPath });
   } catch (error) {
     console.error('Team File Upload Error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Internal server error', details: error.message });
   }
 });
 
@@ -599,14 +701,20 @@ app.get('/api/student/notes', requireAuth, async (req, res) => {
   const userId = req.session.user.id;
 
   try {
-    const notes = await dbQuery.all('SELECT * FROM student_notes WHERE student_id = ? ORDER BY created_at DESC', [userId]);
+    const { data: notes, error: notesErr } = await supabase
+      .from('student_notes')
+      .select('*')
+      .eq('student_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (notesErr) throw notesErr;
+
     res.json({ notes });
   } catch (error) {
     console.error('Fetch Notes Error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Internal server error', details: error.message });
   }
 });
-
 
 // ----------------------------------------------------
 // ADMINISTRATOR ENDPOINTS
@@ -615,7 +723,13 @@ app.get('/api/student/notes', requireAuth, async (req, res) => {
 // List all students
 app.get('/api/admin/students', requireAdmin, async (req, res) => {
   try {
-    const students = await dbQuery.all('SELECT id, name, email, role, profile_pic, semester, created_at FROM users WHERE role = ?', ['student']);
+    const { data: students, error: studentsErr } = await supabase
+      .from('users')
+      .select('id, name, email, role, profile_pic, semester, created_at')
+      .eq('role', 'student');
+
+    if (studentsErr) throw studentsErr;
+
     res.json({ students });
   } catch (error) {
     console.error('Admin Students Error:', error);
@@ -633,25 +747,44 @@ app.put('/api/admin/students/:id', requireAdmin, async (req, res) => {
   }
 
   try {
-    const user = await dbQuery.get('SELECT * FROM users WHERE id = ?', [studentId]);
-    if (!user) {
+    const { data: user, error: getErr } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', studentId)
+      .maybeSingle();
+
+    if (getErr || !user) {
       return res.status(404).json({ error: 'Student not found' });
     }
 
-    const emailConflict = await dbQuery.get('SELECT * FROM users WHERE email = ? AND id != ?', [email.toLowerCase(), studentId]);
+    const { data: emailConflict, error: conflictErr } = await supabase
+      .from('users')
+      .select('*')
+      .eq('email', email.toLowerCase())
+      .neq('id', studentId)
+      .maybeSingle();
+
+    if (conflictErr) throw conflictErr;
     if (emailConflict) {
       return res.status(400).json({ error: 'Email already in use' });
     }
 
-    await dbQuery.run(
-      'UPDATE users SET name = ?, email = ?, role = ?, semester = ? WHERE id = ?',
-      [name, email.toLowerCase(), role || user.role, semester || user.semester, studentId]
-    );
+    const { error: updateErr } = await supabase
+      .from('users')
+      .update({
+        name,
+        email: email.toLowerCase(),
+        role: role || user.role,
+        semester: semester || user.semester
+      })
+      .eq('id', studentId);
+
+    if (updateErr) throw updateErr;
 
     res.json({ message: 'Student updated successfully' });
   } catch (error) {
     console.error('Admin Edit Student Error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Internal server error', details: error.message });
   }
 });
 
@@ -660,33 +793,60 @@ app.delete('/api/admin/students/:id', requireAdmin, async (req, res) => {
   const studentId = req.params.id;
 
   try {
-    const result = await dbQuery.run('DELETE FROM users WHERE id = ?', [studentId]);
-    if (result.changes === 0) {
+    const { error: deleteErr, count } = await supabase
+      .from('users')
+      .delete({ count: 'exact' })
+      .eq('id', studentId);
+
+    if (deleteErr) throw deleteErr;
+    if (count === 0) {
       return res.status(404).json({ error: 'Student not found' });
     }
     res.json({ message: 'Student deleted successfully' });
   } catch (error) {
     console.error('Admin Delete Student Error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Internal server error', details: error.message });
   }
 });
 
 // List all registered teams with members
 app.get('/api/admin/teams', requireAdmin, async (req, res) => {
   try {
-    const teams = await dbQuery.all(`
-      SELECT t.*, u.name as leader_name, u.email as leader_email
-      FROM teams t
-      JOIN users u ON t.leader_id = u.id
-      ORDER BY t.created_at DESC
-    `);
+    const { data: teams, error: teamsErr } = await supabase
+      .from('teams')
+      .select('*, leader:users!inner(name, email)')
+      .order('created_at', { ascending: false });
 
-    // Fetch members for each team
-    for (const team of teams) {
-      team.members = await dbQuery.all('SELECT name, email, roll_no, phone_no FROM team_members WHERE team_id = ?', [team.id]);
+    if (teamsErr) throw teamsErr;
+
+    const formattedTeams = (teams || []).map(t => ({
+      id: t.id,
+      team_name: t.team_name,
+      problem_type: t.problem_type,
+      problem_statement: t.problem_statement,
+      leader_id: t.leader_id,
+      status: t.status,
+      ppt_path: t.ppt_path,
+      doc_path: t.doc_path,
+      pitch_order: t.pitch_order,
+      pitch_completed: t.pitch_completed,
+      pitch_time: t.pitch_time,
+      created_at: t.created_at,
+      leader_name: t.leader.name,
+      leader_email: t.leader.email
+    }));
+
+    for (const team of formattedTeams) {
+      const { data: members, error: memErr } = await supabase
+        .from('team_members')
+        .select('name, email, roll_no, phone_no')
+        .eq('team_id', team.id);
+
+      if (memErr) throw memErr;
+      team.members = members || [];
     }
 
-    res.json({ teams });
+    res.json({ teams: formattedTeams });
   } catch (error) {
     console.error('Admin Fetch Teams Error:', error);
     res.status(500).json({ error: 'Internal server error', details: error.message });
@@ -703,14 +863,16 @@ app.put('/api/admin/teams/:id/status', requireAdmin, async (req, res) => {
   }
 
   try {
-    const result = await dbQuery.run('UPDATE teams SET status = ? WHERE id = ?', [status, teamId]);
-    if (result.changes === 0) {
-      return res.status(404).json({ error: 'Team not found' });
-    }
+    const { error: statusErr, count } = await supabase
+      .from('teams')
+      .update({ status })
+      .eq('id', teamId);
+
+    if (statusErr) throw statusErr;
     res.json({ message: `Team status updated to: ${status}` });
   } catch (error) {
     console.error('Admin Update Team Status Error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Internal server error', details: error.message });
   }
 });
 
@@ -724,24 +886,29 @@ app.put('/api/admin/teams/:id', requireAdmin, async (req, res) => {
   }
 
   try {
-    const conflict = await dbQuery.get('SELECT * FROM teams WHERE team_name = ? AND id != ?', [team_name, teamId]);
+    const { data: conflict, error: conflictErr } = await supabase
+      .from('teams')
+      .select('*')
+      .eq('team_name', team_name)
+      .neq('id', teamId)
+      .maybeSingle();
+
+    if (conflictErr) throw conflictErr;
     if (conflict) {
       return res.status(400).json({ error: 'Team name already in use' });
     }
 
-    const result = await dbQuery.run(
-      'UPDATE teams SET team_name = ?, problem_type = ?, problem_statement = ? WHERE id = ?',
-      [team_name, problem_type, problem_statement, teamId]
-    );
+    const { error: updateErr } = await supabase
+      .from('teams')
+      .update({ team_name, problem_type, problem_statement })
+      .eq('id', teamId);
 
-    if (result.changes === 0) {
-      return res.status(404).json({ error: 'Team not found' });
-    }
+    if (updateErr) throw updateErr;
 
     res.json({ message: 'Team details updated successfully' });
   } catch (error) {
     console.error('Admin Edit Team Error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Internal server error', details: error.message });
   }
 });
 
@@ -750,14 +917,16 @@ app.delete('/api/admin/teams/:id', requireAdmin, async (req, res) => {
   const teamId = req.params.id;
 
   try {
-    const result = await dbQuery.run('DELETE FROM teams WHERE id = ?', [teamId]);
-    if (result.changes === 0) {
-      return res.status(404).json({ error: 'Team not found' });
-    }
+    const { error: deleteErr } = await supabase
+      .from('teams')
+      .delete()
+      .eq('id', teamId);
+
+    if (deleteErr) throw deleteErr;
     res.json({ message: 'Team deleted successfully' });
   } catch (error) {
     console.error('Admin Delete Team Error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Internal server error', details: error.message });
   }
 });
 
@@ -771,25 +940,38 @@ app.post('/api/admin/students/:id/notes', requireAdmin, uploadNoteImage.single('
   }
 
   try {
-    const student = await dbQuery.get('SELECT * FROM users WHERE id = ? AND role = ?', [studentId, 'student']);
-    if (!student) {
+    const { data: student, error: studentErr } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', studentId)
+      .eq('role', 'student')
+      .maybeSingle();
+
+    if (studentErr || !student) {
       return res.status(404).json({ error: 'Student not found' });
     }
 
     let imagePath = null;
     if (req.file) {
-      imagePath = `/uploads/notes/${req.file.filename}`;
+      const ext = path.extname(req.file.originalname).toLowerCase();
+      const storagePath = `notes/note-${studentId}-${Date.now()}${ext}`;
+      imagePath = await uploadToSupabase(req.file.buffer, 'uploads', storagePath, req.file.mimetype);
     }
 
-    await dbQuery.run(
-      'INSERT INTO student_notes (student_id, note_text, image_path) VALUES (?, ?, ?)',
-      [studentId, note_text, imagePath]
-    );
+    const { error: insertErr } = await supabase
+      .from('student_notes')
+      .insert({
+        student_id: studentId,
+        note_text,
+        image_path: imagePath
+      });
+
+    if (insertErr) throw insertErr;
 
     res.status(201).json({ message: 'Note added to student dashboard successfully' });
   } catch (error) {
     console.error('Admin Add Note Error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Internal server error', details: error.message });
   }
 });
 
@@ -798,14 +980,16 @@ app.delete('/api/admin/notes/:id', requireAdmin, async (req, res) => {
   const noteId = req.params.id;
 
   try {
-    const result = await dbQuery.run('DELETE FROM student_notes WHERE id = ?', [noteId]);
-    if (result.changes === 0) {
-      return res.status(404).json({ error: 'Note not found' });
-    }
+    const { error: deleteErr } = await supabase
+      .from('student_notes')
+      .delete()
+      .eq('id', noteId);
+
+    if (deleteErr) throw deleteErr;
     res.json({ message: 'Note deleted successfully' });
   } catch (error) {
     console.error('Admin Delete Note Error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Internal server error', details: error.message });
   }
 });
 
@@ -816,48 +1000,65 @@ app.delete('/api/admin/notes/:id', requireAdmin, async (req, res) => {
 // Get all approved teams ordered by pitch order
 app.get('/api/timetable', requireAuth, async (req, res) => {
   try {
-    const teams = await dbQuery.all(
-      'SELECT id, team_name, problem_type, problem_statement, leader_id, status, pitch_order, pitch_completed, pitch_time FROM teams WHERE status = ? ORDER BY pitch_order ASC',
-      ['approved']
-    );
-    res.json({ teams });
+    const { data: teams, error: teamsErr } = await supabase
+      .from('teams')
+      .select('id, team_name, problem_type, problem_statement, leader_id, status, pitch_order, pitch_completed, pitch_time')
+      .eq('status', 'approved')
+      .order('pitch_order', { ascending: true });
+
+    if (teamsErr) throw teamsErr;
+
+    res.json({ teams: teams || [] });
   } catch (error) {
     console.error('Fetch Timetable Error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Internal server error', details: error.message });
   }
 });
 
 // Update timetable (Admin only)
 app.put('/api/admin/timetable', requireAdmin, async (req, res) => {
-  const { schedule } = req.body; // array of { teamId, pitch_order, pitch_time, pitch_completed }
+  const { schedule } = req.body;
   if (!Array.isArray(schedule)) {
     return res.status(400).json({ error: 'Schedule must be an array' });
   }
   try {
     for (const item of schedule) {
-      await dbQuery.run(
-        'UPDATE teams SET pitch_order = ?, pitch_time = ?, pitch_completed = ? WHERE id = ?',
-        [item.pitch_order, item.pitch_time, item.pitch_completed, item.teamId]
-      );
+      const { error: updateErr } = await supabase
+        .from('teams')
+        .update({
+          pitch_order: item.pitch_order,
+          pitch_time: item.pitch_time,
+          pitch_completed: item.pitch_completed
+        })
+        .eq('id', item.teamId);
+
+      if (updateErr) throw updateErr;
     }
     res.json({ message: 'Timetable updated successfully' });
   } catch (error) {
     console.error('Update Timetable Error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Internal server error', details: error.message });
   }
 });
 
 // Get next pitch turn (Next pending team)
 app.get('/api/timetable/next-turn', requireAuth, async (req, res) => {
   try {
-    const nextTeam = await dbQuery.get(
-      'SELECT id, team_name, problem_type, problem_statement, leader_id, status, pitch_order, pitch_completed, pitch_time FROM teams WHERE status = ? AND pitch_completed = ? ORDER BY pitch_order ASC LIMIT 1',
-      ['approved', false]
-    );
+    const { data: nextTeam, error: nextErr } = await supabase
+      .from('teams')
+      .select('id, team_name, problem_type, problem_statement, leader_id, status, pitch_order, pitch_completed, pitch_time')
+      .eq('status', 'approved')
+      .eq('pitch_completed', false)
+      .order('pitch_order', { ascending: true })
+      .limit(1)
+      .maybeSingle();
+
+    if (nextErr) throw nextErr;
+
     res.json({ nextTeam: nextTeam || null });
   } catch (error) {
     console.error('Fetch Next Turn Error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Internal server error', details: error.message });
   }
 });
 
@@ -868,16 +1069,28 @@ app.get('/api/timetable/next-turn', requireAuth, async (req, res) => {
 // Get active configuration (deadline and stages)
 app.get('/api/competition/config', async (req, res) => {
   try {
-    const deadlineRow = await dbQuery.get('SELECT value FROM settings WHERE key = ?', ['countdown_deadline']);
-    const stagesRow = await dbQuery.get('SELECT value FROM settings WHERE key = ?', ['stages']);
-    
+    const { data: deadlineRow, error: dlErr } = await supabase
+      .from('settings')
+      .select('value')
+      .eq('key', 'countdown_deadline')
+      .maybeSingle();
+
+    const { data: stagesRow, error: stErr } = await supabase
+      .from('settings')
+      .select('value')
+      .eq('key', 'stages')
+      .maybeSingle();
+
+    if (dlErr) throw dlErr;
+    if (stErr) throw stErr;
+
     res.json({
       countdown_deadline: deadlineRow ? deadlineRow.value : '2026-09-30T23:59:59',
       stages: stagesRow ? JSON.parse(stagesRow.value) : []
     });
   } catch (error) {
     console.error('Fetch Config Error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Internal server error', details: error.message });
   }
 });
 
@@ -907,17 +1120,25 @@ app.put('/api/admin/competition/config', requireAdmin, async (req, res) => {
       return res.status(400).json({ error: 'Stages must be a JSON array' });
     }
     
-    await dbQuery.run('INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value', ['countdown_deadline', countdown_deadline]);
-    await dbQuery.run('INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value', ['stages', stagesStr]);
+    const { error: dlErr } = await supabase
+      .from('settings')
+      .upsert({ key: 'countdown_deadline', value: countdown_deadline });
+
+    const { error: stErr } = await supabase
+      .from('settings')
+      .upsert({ key: 'stages', value: stagesStr });
+
+    if (dlErr) throw dlErr;
+    if (stErr) throw stErr;
     
     res.json({ message: 'Competition settings updated successfully' });
   } catch (error) {
     console.error('Update Config Error:', error);
-    res.status(500).json({ error: 'Internal server error or invalid stages format' });
+    res.status(500).json({ error: 'Internal server error or invalid stages format', details: error.message });
   }
 });
 
-// Start Express Server
+// Start Express Server locally
 if (!process.env.VERCEL) {
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server is running on port ${PORT}`);
