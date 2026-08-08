@@ -27,8 +27,7 @@ let sessionStore;
 if (db) {
   sessionStore = new PgSession({
     pool: db,
-    tableName: 'session',
-    createTableIfMissing: true
+    tableName: 'session'
   });
 }
 
