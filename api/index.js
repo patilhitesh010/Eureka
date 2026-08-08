@@ -220,6 +220,14 @@ app.get('/api/auth/me', (req, res) => {
   }
 });
 
+// GET fallbacks to redirect users to HTML pages if direct browser access occurs
+app.get('/api/auth/login', (req, res) => {
+  res.redirect('/login.html');
+});
+app.get('/api/auth/register', (req, res) => {
+  res.redirect('/register.html');
+});
+
 // Register Student
 app.post('/api/auth/register', async (req, res) => {
   const { name, email, password, semester } = req.body;
