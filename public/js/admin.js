@@ -92,7 +92,17 @@ async function loadDashboardData() {
       fetch(apiBase + '/api/admin/teams')
     ]);
     
-    if (!studentsRes.ok || !teamsRes.ok) throw new Error('Failed to retrieve database directories.');
+    if (!studentsRes.ok || !teamsRes.ok) {
+      let errMsg = 'Failed to retrieve database directories.';
+      try {
+        const failRes = !studentsRes.ok ? studentsRes : teamsRes;
+        const failData = await failRes.json();
+        if (failData && failData.error) {
+          errMsg = `${failData.error}${failData.details ? `: ${failData.details}` : ''}`;
+        }
+      } catch (e) {}
+      throw new Error(errMsg);
+    }
     
     const studentsData = await studentsRes.json();
     const teamsData = await teamsRes.json();

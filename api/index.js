@@ -1,5 +1,6 @@
 const express = require('express');
 const session = require('express-session');
+const PgSession = require('connect-pg-simple')(session);
 const bcrypt = require('bcryptjs');
 const multer = require('multer');
 const nodemailer = require('nodemailer');
@@ -7,7 +8,7 @@ const path = require('path');
 const fs = require('fs');
 require('dotenv').config();
 
-const { dbQuery } = require('../db');
+const { dbQuery, db } = require('../db');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -32,7 +33,17 @@ if (!fs.existsSync(notesDir)) {
 }
 
 // Session Middleware
+let sessionStore;
+if (db) {
+  sessionStore = new PgSession({
+    pool: db,
+    tableName: 'session',
+    createTableIfMissing: true
+  });
+}
+
 app.use(session({
+  store: sessionStore,
   secret: process.env.SESSION_SECRET || 'super_secret_purple_neon_session_key',
   resave: false,
   saveUninitialized: false,
@@ -608,7 +619,7 @@ app.get('/api/admin/students', requireAdmin, async (req, res) => {
     res.json({ students });
   } catch (error) {
     console.error('Admin Students Error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Internal server error', details: error.message });
   }
 });
 
@@ -678,7 +689,7 @@ app.get('/api/admin/teams', requireAdmin, async (req, res) => {
     res.json({ teams });
   } catch (error) {
     console.error('Admin Fetch Teams Error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Internal server error', details: error.message });
   }
 });
 
