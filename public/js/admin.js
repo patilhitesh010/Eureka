@@ -214,7 +214,7 @@ function renderStudentsTable(filter = '') {
   });
   
   if (filtered.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-muted);">No student profiles matched search query.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--text-muted);">No student profiles matched search query.</td></tr>`;
     return;
   }
   
@@ -224,6 +224,7 @@ function renderStudentsTable(filter = '') {
       <tr>
         <td><strong>${escapeHtml(s.name)}</strong></td>
         <td>${escapeHtml(s.email)}</td>
+        <td><span style="font-size:12px; color:var(--text-muted);">${escapeHtml(s.semester || 'N/A')}</span></td>
         <td><span style="text-transform:uppercase; font-size:11px; font-family:var(--font-mono); color:var(--primary);">${escapeHtml(s.role)}</span></td>
         <td>${regDate}</td>
         <td style="text-align:right;">
@@ -363,6 +364,19 @@ window.openEditStudentModal = function(studentId) {
       <input type="email" id="edit-student-email" class="form-control" value="${escapeHtml(student.email)}" required>
     </div>
     <div class="form-group" style="margin:0;">
+      <label>Semester</label>
+      <select id="edit-student-semester" class="form-control" required>
+        <option value="Semester 1" ${student.semester === 'Semester 1' ? 'selected' : ''}>Semester 1</option>
+        <option value="Semester 2" ${student.semester === 'Semester 2' ? 'selected' : ''}>Semester 2</option>
+        <option value="Semester 3" ${student.semester === 'Semester 3' ? 'selected' : ''}>Semester 3</option>
+        <option value="Semester 4" ${student.semester === 'Semester 4' ? 'selected' : ''}>Semester 4</option>
+        <option value="Semester 5" ${student.semester === 'Semester 5' ? 'selected' : ''}>Semester 5</option>
+        <option value="Semester 6" ${student.semester === 'Semester 6' ? 'selected' : ''}>Semester 6</option>
+        <option value="Semester 7" ${student.semester === 'Semester 7' ? 'selected' : ''}>Semester 7</option>
+        <option value="Semester 8" ${student.semester === 'Semester 8' ? 'selected' : ''}>Semester 8</option>
+      </select>
+    </div>
+    <div class="form-group" style="margin:0;">
       <label>System Role Access</label>
       <select id="edit-student-role" class="form-control">
         <option value="student" ${student.role === 'student' ? 'selected' : ''}>Student</option>
@@ -387,12 +401,13 @@ function handleStudentEditSubmit(e) {
   
   const name = document.getElementById('edit-student-name').value.trim();
   const email = document.getElementById('edit-student-email').value.trim();
+  const semester = document.getElementById('edit-student-semester').value;
   const role = document.getElementById('edit-student-role').value;
   
   fetch(`${apiBase}/api/admin/students/${studentId}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name, email, role })
+    body: JSON.stringify({ name, email, role, semester })
   })
   .then(async (res) => {
     const data = await res.json();

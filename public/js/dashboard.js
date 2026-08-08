@@ -74,6 +74,7 @@ function verifySessionAndInit() {
       document.getElementById('profile-name-title').innerText = currentUser.name;
       document.getElementById('profile-name').value = currentUser.name;
       document.getElementById('profile-email').value = currentUser.email;
+      document.getElementById('profile-semester').value = currentUser.semester || 'Semester 1';
       
       if (currentUser.profile_pic) {
         document.getElementById('profile-avatar-preview').src = apiBase + currentUser.profile_pic;
@@ -95,6 +96,8 @@ function verifySessionAndInit() {
       // Load specific dashboard details
       loadTeamStatus();
       loadStudentNotes();
+      loadNextTurnAlert();
+      setInterval(loadNextTurnAlert, 30000);
     })
     .catch(() => {
       window.location.href = 'login.html';
@@ -618,4 +621,24 @@ function showAlert(containerId, message, type = 'error') {
 function clearAlert(containerId) {
   const container = document.getElementById(containerId);
   if (container) container.innerHTML = '';
+}
+
+function loadNextTurnAlert() {
+  const apiBase = window.API_BASE || "";
+  fetch(apiBase + '/api/timetable/next-turn')
+    .then(res => res.json())
+    .then(data => {
+      const card = document.getElementById('next-turn-card');
+      if (data && data.nextTeam) {
+        document.getElementById('next-team-name').innerText = data.nextTeam.team_name;
+        document.getElementById('next-team-slot').innerText = data.nextTeam.pitch_time || 'No slot assigned';
+        document.getElementById('next-team-statement').innerText = data.nextTeam.problem_statement;
+        card.style.display = 'block';
+      } else {
+        card.style.display = 'none';
+      }
+    })
+    .catch(err => {
+      console.error('Failed to load next turn update:', err);
+    });
 }

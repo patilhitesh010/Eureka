@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pitch Timetable | Eureka 2026</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    /* Custom premium timetable layout styles */
+    .timetable-table th, .timetable-table td {
+      vertical-align: middle;
+      padding: 16px 20px;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      font-family: var(--font-mono);
+      letter-spacing: 0.5px;
+    }
+    .badge-live {
+      background: rgba(6, 182, 212, 0.15);
+      color: var(--accent);
+      border: 1px solid var(--accent);
+      box-shadow: 0 0 10px rgba(6, 182, 212, 0.2);
+      animation: blinker 1.5s linear infinite;
+    }
+    .badge-completed {
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--success);
+      border: 1px solid var(--success);
+    }
+    .badge-upcoming {
+      background: rgba(148, 163, 184, 0.1);
+      color: var(--text-muted);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+    }
+    @keyframes blinker {
+      50% { opacity: 0.5; }
+    }
+    .row-live {
+      background: rgba(6, 182, 212, 0.03);
+      border-left: 3px solid var(--accent);
+      box-shadow: inset 5px 0 15px rgba(6, 182, 212, 0.05);
+    }
+    .order-input, .time-input {
+      background: rgba(11, 8, 19, 0.6);
+      border: 1px solid var(--panel-border);
+      color: var(--white);
+      border-radius: var(--border-radius-sm);
+      padding: 8px 12px;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      width: 100%;
+    }
+    .order-input {
+      max-width: 70px;
+      text-align: center;
+    }
+    .time-input {
+      max-width: 140px;
+    }
+    .order-input:focus, .time-input:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: var(--glow-primary);
+    }
+  </style>
+</head>
+<body>
+  <div class="eureka-bg-blink">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="500" height="500" style="fill: var(--primary); filter: drop-shadow(0 0 25px rgba(168,85,247,0.25));">
+      <polygon points="45,20 155,20 155,50 45,50" />
+      <polygon points="45,85 130,85 130,115 45,115" style="fill: var(--white);" />
+      <polygon points="45,150 155,150 155,180 45,180" />
+      <rect x="18" y="20" width="18" height="160" />
+    </svg>
+  </div>
+  
+  <header>
+    <div class="container navbar">
+      <a href="index.html" class="logo">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 62" width="220" height="62" class="eureka-logo-svg">
+          <text x="50" y="10" font-family="'Space Grotesk', sans-serif" font-weight="700" font-size="6.5" fill="#a855f7" letter-spacing="0.5">E-CELL SIT'S</text>
+          <rect x="5" y="26" width="5" height="15" fill="#a855f7" />
+          <rect x="13" y="18" width="5" height="23" fill="#a855f7" />
+          <rect x="21" y="10" width="5" height="31" fill="#a855f7" />
+          <rect x="26" y="10" width="13" height="5" fill="#ffffff" />
+          <rect x="26" y="23" width="9" height="5" fill="#ffffff" />
+          <rect x="26" y="36" width="13" height="5" fill="#ffffff" />
+          <text x="43" y="41" font-family="'Space Grotesk', sans-serif" font-weight="900" font-size="34" fill="#ffffff" letter-spacing="1">UREKA</text>
+          <rect x="200" y="10" width="5" height="21" fill="#ffffff" />
+          <polygon points="200,35 205,35 204,41 199,41" fill="#ffffff" />
+          <polygon points="21,46 165,46 161,54 21,54" fill="#ffffff" />
+          <text x="27" y="52.5" font-family="'Outfit', sans-serif" font-weight="800" font-size="6" fill="#000000" letter-spacing="0.2">WHERE VISION MEETS VENTURE</text>
+          <text x="168" y="54" font-family="'Space Grotesk', sans-serif" font-weight="900" font-size="11" fill="#a855f7">2026</text>
+        </svg>
+      </a>
+      <nav>
+        <ul class="nav-links">
+          <li><span id="user-role-display" style="color: var(--primary); font-weight: 700; font-family: var(--font-mono); font-size: 13px;">Guest</span></li>
+          <li id="dashboard-nav-item" style="display: none;"><a href="dashboard.html">Dashboard</a></li>
+          <li id="admin-nav-item" style="display: none;"><a href="admin.html" class="btn btn-primary btn-sm">Admin Panel</a></li>
+          <li><a href="index.html">Home</a></li>
+          <li><button id="logout-btn" class="btn btn-secondary btn-sm" style="cursor: pointer;">Logout</button></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container" style="padding-top: 40px;">
+    <div id="timetable-alert"></div>
+
+    <div class="card" style="margin-bottom: 30px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 20px; margin-bottom: 25px;">
+        <div>
+          <h2 style="font-family: var(--font-display); color: var(--white); margin: 0 0 5px;">📅 Live Pitch Timetable</h2>
+          <p style="color: var(--text-muted); font-size: 14px; margin: 0;">Roster schedule of approved startups and presentations.</p>
+        </div>
+        <div id="admin-controls" style="display: none;">
+          <button id="save-timetable-btn" class="btn btn-primary" style="box-shadow: var(--glow-primary);">💾 Save Live Changes</button>
+        </div>
+      </div>
+
+      <div class="table-responsive">
+        <table class="timetable-table">
+          <thead>
+            <tr>
+              <th style="width: 100px;">Order</th>
+              <th>Startup Team</th>
+              <th style="width: 200px;">Pitch Time</th>
+              <th>Innovation Problem Statement</th>
+              <th style="width: 150px;">Pitch Status</th>
+              <th id="admin-th" style="display: none; width: 120px; text-align: right;">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="timetable-tbody">
+            <tr>
+              <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 40px;">Loading schedule records...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="container" style="text-align: center;">
+      <p>&copy; 2026 Eureka Startup Competition. All rights reserved. EPIC E-Cell SIT.</p>
+    </div>
+  </footer>
+
+  <script src="js/config.js"></script>
+  <script src="js/transitions.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    let currentUser = null;
+    let originalTeams = [];
+
+    document.addEventListener('DOMContentLoaded', () => {
+      verifyUserAndLoad();
+      document.getElementById('save-timetable-btn').addEventListener('click', saveTimetable);
+    });
+
+    function verifyUserAndLoad() {
+      const apiBase = window.API_BASE || "";
+      fetch(apiBase + '/api/auth/me')
+        .then(res => {
+          if (!res.ok) throw new Error();
+          return res.json();
+        })
+        .then(data => {
+          currentUser = data.user;
+          document.getElementById('user-role-display').innerText = currentUser.role === 'admin' ? 'Organizer' : `Leader: ${currentUser.name}`;
+          
+          if (currentUser.role === 'admin') {
+            document.getElementById('admin-nav-item').style.display = 'block';
+            document.getElementById('admin-controls').style.display = 'block';
+            document.getElementById('admin-th').style.display = 'table-cell';
+          } else {
+            document.getElementById('dashboard-nav-item').style.display = 'block';
+          }
+          
+          loadTimetableData();
+        })
+        .catch(() => {
+          window.location.href = 'login.html';
+        });
+    }
+
+    function loadTimetableData() {
+      const apiBase = window.API_BASE || "";
+      fetch(apiBase + '/api/timetable')
+        .then(res => res.json())
+        .then(data => {
+          originalTeams = data.teams || [];
+          renderTimetable(originalTeams);
+        })
+        .catch(err => {
+          showAlert('timetable-alert', 'Failed to load timetable details', 'error');
+        });
+    }
+
+    function renderTimetable(teams) {
+      const tbody = document.getElementById('timetable-tbody');
+      if (teams.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="${currentUser.role === 'admin' ? 6 : 5}" style="text-align: center; color: var(--text-muted); padding: 40px;">No approved teams are scheduled to pitch yet.</td></tr>`;
+        return;
+      }
+
+      // Find the first non-completed team in order to mark them as LIVE
+      let nextLiveId = null;
+      const firstPending = teams.find(t => !t.pitch_completed);
+      if (firstPending) {
+        nextLiveId = firstPending.id;
+      }
+
+      tbody.innerHTML = teams.map((team, idx) => {
+        const isLive = team.id === nextLiveId;
+        const statusBadge = team.pitch_completed 
+          ? `<span class="badge badge-completed">Completed</span>`
+          : (isLive ? `<span class="badge badge-live">⚡ LIVE NOW</span>` : `<span class="badge badge-upcoming">Upcoming</span>`);
+        
+        const rowClass = isLive ? 'class="row-live"' : '';
+
+        if (currentUser.role === 'admin') {
+          return `
+            <tr ${rowClass} data-team-id="${team.id}">
+              <td>
+                <input type="number" class="order-input" value="${team.pitch_order || (idx + 1)}" data-field="pitch_order">
+              </td>
+              <td><strong>${escapeHtml(team.team_name)}</strong></td>
+              <td>
+                <input type="text" class="time-input" placeholder="e.g. 10:00 AM" value="${escapeHtml(team.pitch_time || '')}" data-field="pitch_time">
+              </td>
+              <td><span style="font-size: 13px; color: var(--text-muted);">${escapeHtml(team.problem_statement)}</span></td>
+              <td>
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <input type="checkbox" style="transform: scale(1.25); cursor: pointer;" ${team.pitch_completed ? 'checked' : ''} data-field="pitch_completed">
+                  <span style="font-size: 12px; color: var(--text-muted);">${team.pitch_completed ? 'Finished' : 'Pending'}</span>
+                </div>
+              </td>
+              <td style="text-align: right;">
+                ${statusBadge}
+              </td>
+            </tr>
+          `;
+        } else {
+          return `
+            <tr ${rowClass}>
+              <td style="font-family: var(--font-mono); font-weight: 700; color: ${isLive ? 'var(--accent)' : 'var(--text-muted)'};">#${team.pitch_order || (idx + 1)}</td>
+              <td><strong>${escapeHtml(team.team_name)}</strong></td>
+              <td style="font-family: var(--font-mono); color: var(--white); font-weight: 600;">${escapeHtml(team.pitch_time || 'N/A')}</td>
+              <td><span style="font-size: 13px; color: var(--text-muted);">${escapeHtml(team.problem_statement)}</span></td>
+              <td>${statusBadge}</td>
+            </tr>
+          `;
+        }
+      }).join('');
+    }
+
+    function saveTimetable() {
+      const btn = document.getElementById('save-timetable-btn');
+      btn.disabled = true;
+      btn.innerText = 'Saving Changes...';
+      clearAlert('timetable-alert');
+
+      const tbody = document.getElementById('timetable-tbody');
+      const rows = tbody.querySelectorAll('tr[data-team-id]');
+      const schedule = [];
+
+      rows.forEach(row => {
+        const teamId = parseInt(row.getAttribute('data-team-id'));
+        const pitch_order = parseInt(row.querySelector('[data-field="pitch_order"]').value) || 0;
+        const pitch_time = row.querySelector('[data-field="pitch_time"]').value.trim();
+        const pitch_completed = row.querySelector('[data-field="pitch_completed"]').checked;
+        schedule.push({ teamId, pitch_order, pitch_time, pitch_completed });
+      });
+
+      const apiBase = window.API_BASE || "";
+      fetch(apiBase + '/api/admin/timetable', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ schedule })
+      })
+      .then(async (res) => {
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to save timetable modifications');
+        return data;
+      })
+      .then(data => {
+        showAlert('timetable-alert', 'Timetable configuration saved and updated successfully!', 'success');
+        loadTimetableData();
+      })
+      .catch(err => {
+        showAlert('timetable-alert', err.message, 'error');
+      })
+      .finally(() => {
+        btn.disabled = false;
+        btn.innerText = '💾 Save Live Changes';
+      });
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function showAlert(containerId, message, type = 'error') {
+      const container = document.getElementById(containerId);
+      if (!container) return;
+      
+      container.innerHTML = `
+        <div class="alert alert-${type}" style="margin-bottom: 20px;">
+          <span>${type === 'success' ? '✔' : '⚠'} ${message}</span>
+        </div>
+      `;
+      container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function clearAlert(containerId) {
+      const container = document.getElementById(containerId);
+      if (container) container.innerHTML = '';
+    }
+  </script>
+</body>
+</html>
